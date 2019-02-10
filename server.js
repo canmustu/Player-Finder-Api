@@ -9,6 +9,9 @@ const passport = require('passport');
 const keys = require('./config/keys');
 const session = require('express-session');
 
+// routes
+const auth_route = require('./routes/auth-routes')
+
 // models
 require('./models/user-model');
 
@@ -39,7 +42,7 @@ app.use(cors());
 app.use(body_parser.json());
 
 // routes
-require('./routes/auth-routes')(app);
+app.use(auth_route.path, auth_route);
 
 app.get('/', (req, res) => {
     if (req.user) res.send(req.user);

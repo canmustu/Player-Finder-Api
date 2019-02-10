@@ -2,8 +2,8 @@ module.exports = {
     mongodb: {
         URI: 'mongodb://localhost:27017/player_finder_db'
     },
-    token: {
-        secret: 'H-9bQeThWmZq4t7w'
+    token_key: {
+        secret: 'Hm9bQeThWmZq4t7w'
     },
     google: {
         clientID: '339914601400-ikk60dkpd5r2bmn93dbr3kunpddk1t9s.apps.googleusercontent.com',

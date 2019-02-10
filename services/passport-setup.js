@@ -21,12 +21,12 @@ passport.deserializeUser(function (user, done) {
 // jwt
 let opts = {
     jwtFromRequest: ExtractJwt.fromAuthHeaderWithScheme('jwt'),
-    secretOrKey: keys.token.secret
+    secretOrKey: keys.token_key.secret
 };
 
 passport.use(new JwtStrategy(opts, (jwt_payload, done) => {
 
-    User.getUserById(jwt_payload.user._id, (err, user) => {
+    User.getUserById(jwt_payload.user.id, (err, user) => {
         if (err) {
             return done(err, false);
         }
@@ -38,9 +38,7 @@ passport.use(new JwtStrategy(opts, (jwt_payload, done) => {
                 email: user.email,
                 scope: user.scope.length > 0 ? user.scope : undefined
             });
-
         } else {
-
             return done(null, false);
         }
     });

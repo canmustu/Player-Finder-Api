@@ -4,8 +4,7 @@ const crypto = require('crypto');
 const randomstring = require('randomstring');
 const nodemailer = require('nodemailer');
 
-const salt = "0cd1e9e3d1bd079a"; // secret salt
-
+const salt = "0cd1e9E3d1bD079a"; // secret salt for encrypt password
 
 // user schema
 const UserSchema = mongoose.Schema({
@@ -106,14 +105,19 @@ const UserSchema = mongoose.Schema({
     }
 }, { versionKey: false, timestamps: { createdAt: 'created_at', updatedAt: false } });
 
-module.exports = mongoose.model('users', UserSchema);
+const User = module.exports = mongoose.model('users', UserSchema);
+
+module.exports.getUserById = function (id, callback) {
+    const query = { _id : id }
+    User.findOne(query, callback);
+}
 
 module.exports.getUserByUsername = function (username, callback) {
     const query = { username: username }
     User.findOne(query, callback)
 }
 
-module.exports.add = async function (user) {
+module.exports.register = async function (user) {
 
     const emailCount = await User.countDocuments({ email: user.email })
     if (emailCount > 0) throw new Error('301')
@@ -121,31 +125,12 @@ module.exports.add = async function (user) {
     const usernameCount = await User.countDocuments({ username: user.username })
     if (usernameCount > 0) throw new Error('302')
 
-    user.password = getHash(user.password + salt)
+    for (let i = 0; i < 10; i++) {
+        user.password = getHash(user.password + salt)
+    }
     await user.save()
     user.password = undefined
     return { success: true, user: user }
-}
-
-module.exports.addCategoryToUser = function (user_id, category_id, callback) {
-    User.updateOne(
-        { _id: user_id },
-        { $addToSet: { categories: category_id } },
-        (err, raw) => {
-            if (err) return callback({ success: false, msg: err.msg }, null)
-            if (!raw.ok) return callback({ success: false, msg: 700 }, null)
-            if (raw.n == 0) {
-                return callback(null, { success: false, msg: 300 })
-            } else if (raw.nModified > 0) {
-                return callback(null, { success: true })
-            } else {
-                return callback(null, {
-                    success: false,
-                    msg: 500
-                })
-            }
-        }
-    )
 }
 
 module.exports.forgetPassword = function (email, callback) {
@@ -197,83 +182,6 @@ module.exports.forgetPassword = function (email, callback) {
     )
 }
 
-module.exports.deleteCategoryFromUser = function (user_id, category_id, callback) {
-    User.updateOne(
-        { _id: user_id },
-        { $pull: { categories: category_id } },
-        (err, raw) => {
-            if (err) return callback({ success: false, msg: err.msg }, null)
-            if (!raw.ok) return callback({ success: false, msg: 700 }, null)
-            if (raw.n == 0) {
-                return callback(null, { success: false, msg: 300 })
-            } else if (raw.nModified > 0) {
-                return callback(null, { success: true })
-            } else {
-                return callback(null, { success: false, msg: 501 })
-            }
-        }
-    )
-}
-
-module.exports.addTransactionToUser = function (user_id, transaction_id, callback) {
-    User.updateOne(
-        { _id: user_id },
-        { $addToSet: { transactions: transaction_id } },
-        (err, raw) => {
-            if (err) return callback({ success: false, msg: err.msg }, null)
-            if (!raw.ok) return callback({ success: false, msg: 700 }, null)
-            if (raw.n == 0) {
-                return callback(null, { success: false, msg: 300 })
-            } else if (raw.nModified > 0) {
-                return callback(null, { success: true })
-            } else {
-                return callback(null, {
-                    success: false,
-                    msg: 901
-                })
-            }
-        }
-    )
-}
-
-module.exports.deleteTransactionFromUser = function (user_id, transaction_id, callback) {
-    User.updateOne(
-        { _id: user_id },
-        { $pull: { transactions: transaction_id } },
-        (err, raw) => {
-            if (err) return callback({ success: false, msg: err.msg }, null)
-            if (!raw.ok) return callback({ success: false, msg: 700 }, null)
-            if (raw.n == 0) {
-                return callback(null, { success: false, msg: 300 })
-            } else if (raw.nModified > 0) {
-                return callback(null, {
-                    success: true
-                })
-            } else {
-                return callback(null, { success: false, msg: 902 })
-            }
-        }
-    )
-}
-
-module.exports.deleteTransactionsFromUser = function (user_id, array_of_transaction, callback) {
-    User.updateOne(
-        { _id: user_id },
-        { $pullAll: { transactions: array_of_transaction } },
-        (err, raw) => {
-            if (err) return callback({ success: false, msg: err.msg }, null)
-            if (!raw.ok) return callback({ success: false, msg: 700 }, null)
-            if (raw.n == 0) {
-                return callback(null, { success: false, msg: 300 })
-            } else if (raw.nModified > 0) {
-                return callback(null, { success: true })
-            } else {
-                return callback(null, { success: false, msg: 902 })
-            }
-        }
-    )
-}
-
 module.exports.changePassword = function (user_id, old_password, new_password, callback) {
     User.updateOne(
         { _id: user_id, password: getHash(old_password + salt) },
@@ -292,12 +200,11 @@ module.exports.changePassword = function (user_id, old_password, new_password, c
     )
 }
 
-
 module.exports.comparePassword = function (password, hash, callback) {
-    if (hash == getHash(password + salt)) {
+    if (hash == getHash(password + salt))
         return callback(null, true)
-    }
-    else return callback(null, false)
+    else
+        return callback(null, false)
 }
 
 getHash = function (str, alg = 'sha256') {
