@@ -20,6 +20,7 @@ require('./services/passport-setup');
 
 // Connect to mongoose
 mongoose
+    .set('useCreateIndex', true)
     .connect(keys.mongodb.URI, { useNewUrlParser: true })
     .then(() => console.log("Connected to MongoDB"))
     .catch(err => console.log(err));
@@ -31,7 +32,7 @@ app.use(session({
     saveUninitialized: true,
     resave: true,
     cookie: {
-        maxAge: 5 * 60 * 1000, // 5 minute
+        maxAge: 3 * 60 * 1000, // 3 minute
     }
 }));
 
