@@ -5,6 +5,8 @@ const keys = require('../config/keys');
 const express = require('express');
 const router = express.Router();
 
+const User = require('../models/user-model')
+
 router.path = '/auth'
 
 function create_token_key(req) {
@@ -17,10 +19,10 @@ function create_token_key(req) {
 }
 
 function redirect_to_website(req, res) {
-    res.redirect('http://localhost:4200/auth/loggedin/' + create_token_key(req) + '?return_url=' + (req.session.return_url ? req.session.return_url : ''));
+    res.redirect(keys.website_url + 'auth/loggedin/' + create_token_key(req) + '?return_url=' + (req.session.return_url ? req.session.return_url : ''));
 }
 
-// login (login)
+// login
 router.post('/login', (req, res) => {
     const username = req.body.username
     const password = req.body.password
@@ -60,7 +62,23 @@ router.post('/login', (req, res) => {
             }
         })
     })
-})
+});
+
+// register
+router.post('/register', (req, res) => {
+    let user = new User({
+        fullname: req.body.fullname,
+        email: req.body.email,
+        username: req.body.username,
+        password: req.body.password,
+        gender: req.body.gender
+    });
+
+    User.register(user, (error, result) => {
+        if (error) return res.json({ success: false, error: error })
+        else return res.json(result);
+    });
+});
 
 // verify token key
 router.get('/verify_token_key', passport.authenticate('jwt', { session: false }),
@@ -75,10 +93,14 @@ router.get('/verify_token_key', passport.authenticate('jwt', { session: false })
 // decode token key of Authorization header
 router.get('/decode_token_key', passport.authenticate('jwt', { session: false }),
     function (req, res) {
-        res.json(req.user);
+        // Authorization header = "JWT {token_key}"
+        // first 4 characters will be deleted and be taken token key to decode
+        jwt.verify(req.get('Authorization').substring(4), keys.token_key.secret, (err, decoded) => {
+            if (err) res.json({ success: false, err: err.msg });
+            else res.json({ success: true, user: req.user });
+        });
     }
 );
-
 
 // OAUTH 2 - START //
 
@@ -141,7 +163,7 @@ router.get(
 
 router.get(
     '/steam/callback',
-    passport.authenticate('steam', { failureRedirect: '/login', session: false }),
+    passport.authenticate('steam', { session: false }),
     (req, res) => {
 
         // redirect to website

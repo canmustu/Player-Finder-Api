@@ -14,10 +14,12 @@ const UserSchema = mongoose.Schema({
     },
     email: {
         type: String,
+        unique: true,
         required: false
     },
     username: {
         type: String,
+        unique: true,
         required: false
     },
     password: {
@@ -26,7 +28,7 @@ const UserSchema = mongoose.Schema({
     },
     status: {
         type: Number,
-        default: 0
+        default: 1
     },
     gender: {
         type: Boolean,
@@ -51,13 +53,15 @@ const UserSchema = mongoose.Schema({
     }],
     "friend_requests": [
         {
-            _id: {
-                type: mongoose.Schema.Types.ObjectId,
-                required: false,
-            },
-            username: {
-                type: Date,
-                required: false,
+            user: {
+                _id: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    required: false,
+                },
+                username: {
+                    type: Date,
+                    required: false,
+                }
             },
             requested_at: {
                 type: Date,
@@ -68,6 +72,7 @@ const UserSchema = mongoose.Schema({
     google: {
         id: {
             type: String,
+            unique: true,
             required: false
         },
         url: {
@@ -78,6 +83,7 @@ const UserSchema = mongoose.Schema({
     facebook: {
         id: {
             type: String,
+            unique: true,
             required: false
         },
         url: {
@@ -88,6 +94,7 @@ const UserSchema = mongoose.Schema({
     steam: {
         id: {
             type: String,
+            unique: true,
             required: false
         },
         url: {
@@ -102,35 +109,52 @@ const UserSchema = mongoose.Schema({
             type: String,
             required: false
         }
-    }
+    },
+
 }, { versionKey: false, timestamps: { createdAt: 'created_at', updatedAt: false } });
 
 const User = module.exports = mongoose.model('users', UserSchema);
 
 module.exports.getUserById = function (id, callback) {
-    const query = { _id : id }
+    const query = { _id: id };
     User.findOne(query, callback);
 }
 
-module.exports.getUserByUsername = function (username, callback) {
-    const query = { username: username }
-    User.findOne(query, callback)
-}
+module.exports.register = function (user, callback) {
+    // check if email exists
+    User.countDocuments({ email: user.email }, (error_email, email_count) => {
+        // if error
+        if (error_email) callback({ error: { msg: error_email, code: 1001 } }, null);
+        // if email exists
+        if (email_count == 0) {
+            // check if username exists
+            User.countDocuments({ username: user.username }, (error_username, username_count) => {
+                // if error
+                if (error_username) callback({ error: { msg: error_username, code: 1001 } }, null);
+                // if username exists
+                if (username_count == 0) {
+                    try {
+                        // encrypt the following password
+                        user.password = encryptedPasswordAsFull(user.password)
+                        // insert to db
+                        user.save();
+                        // hidden password for return
+                        user.password = undefined;
 
-module.exports.register = async function (user) {
-
-    const emailCount = await User.countDocuments({ email: user.email })
-    if (emailCount > 0) throw new Error('301')
-
-    const usernameCount = await User.countDocuments({ username: user.username })
-    if (usernameCount > 0) throw new Error('302')
-
-    for (let i = 0; i < 10; i++) {
-        user.password = getHash(user.password + salt)
-    }
-    await user.save()
-    user.password = undefined
-    return { success: true, user: user }
+                        return callback(null, { success: true, user });
+                    } catch (error) {
+                        return callback({ msg: error, code: 1001 }, null);
+                    }
+                } else {
+                    // username already exists
+                    return callback({ code: 2001 }, null);
+                }
+            })
+        } else {
+            // email already exists
+            return callback({ code: 2002 }, null);
+        }
+    })
 }
 
 module.exports.forgetPassword = function (email, callback) {
@@ -202,13 +226,27 @@ module.exports.changePassword = function (user_id, old_password, new_password, c
 
 module.exports.comparePassword = function (password, hash, callback) {
     if (hash == getHash(password + salt))
-        return callback(null, true)
+        return callback(null, true);
     else
-        return callback(null, false)
+        return callback(null, false);
 }
 
 getHash = function (str, alg = 'sha256') {
-    let hash = crypto.createHash(alg)
-    hash.update(str)
-    return hash.digest('hex')
+    let hash = crypto.createHash(alg);
+    hash.update(str);
+    return hash.digest('hex');
+}
+
+encryptedPasswordAsFull = function (password) {
+    for (let i = 0; i < 10; i++) {
+        password = getHash(password + salt)
+    }
+    return password;
+}
+
+encryptedPasswordAsHalf = function (password) {
+    for (let i = 0; i < 5; i++) {
+        password = getHash(password + salt)
+    }
+    return password;
 }
