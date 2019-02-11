@@ -15,8 +15,6 @@ module.exports = {
     },
     steam: {
         apiKey: '8E91974DBD8A1F0DCE262C827D56BCD6',
-    }
+    },
+    website_url: 'http://localhost:4200/'
 }
-
-// 901608069917-rtoa8p3fni5v7ppvvlq4lt5mh0b4rvio.apps.googleusercontent.com
-// P4xP1FiLGeIUaQkxeDSCt8WT
