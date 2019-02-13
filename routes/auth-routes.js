@@ -1,17 +1,18 @@
+const mongoose = require('mongoose');
 const passport = require('passport');
-const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 const keys = require('../config/keys');
 const express = require('express');
 const router = express.Router();
 
-const User = require('../models/user-model')
+const User = require('../models/user-model');
+const UserRepository = require('../repositories/user-repository');
 
 router.path = '/auth'
 
-function create_token_key(req) {
+function create_token_key(user) {
     return jwt.sign({
-        user: req.user
+        user: user
     }, keys.token_key.secret, {
             expiresIn: 7 * 24 * 60 * 60 // 7 gün
         }
@@ -19,49 +20,20 @@ function create_token_key(req) {
 }
 
 function redirect_to_website(req, res) {
-    res.redirect(keys.website_url + 'auth/loggedin/' + create_token_key(req) + '?return_url=' + (req.session.return_url ? req.session.return_url : ''));
+    res.redirect(keys.website_url + 'auth/loggedin/' + create_token_key(req.user) + '?return_url=' + (req.session.return_url ? req.session.return_url : ''));
 }
 
 // login
 router.post('/login', (req, res) => {
-    const username = req.body.username
-    const password = req.body.password
+    let user = {
+        username_or_email: req.body.username_or_email,
+        password: req.body.password
+    };
 
-    User.getUserByUsername(username, (err, user) => {
-        if (err) throw err
-        if (!user) {
-            return res.json({ success: false, msg: 'User not found' })
-        }
-
-        User.comparePassword(password, user.password, (err, isMatch) => {
-
-            if (err) throw err
-            if (isMatch) {
-                const token = jwt.sign({
-                    user: {
-                        _id: user._id,
-                        fullname: user.fullname,
-                        username: user.username,
-                        email: user.email
-                    }
-                }, keys.token_key.secret, {
-                        expiresIn: 7 * 24 * 60 * 60 // seconds
-                    })
-
-                res.json({
-                    success: true,
-                    token: 'JWT ' + token,
-                    user: {
-                        fullname: user.fullname,
-                        username: user.username,
-                        email: user.email
-                    }
-                })
-            } else {
-                return res.json({ success: false, msg: 'Wrong password' })
-            }
-        })
-    })
+    UserRepository.login(user, (error, result) => {
+        if (error) return res.json({ success: false, error: error })
+        else return res.json({ success: result.success, user: result.user, token_key: create_token_key(result.user) });
+    });
 });
 
 // register
@@ -74,7 +46,7 @@ router.post('/register', (req, res) => {
         gender: req.body.gender
     });
 
-    User.register(user, (error, result) => {
+    UserRepository.register(user, (error, result) => {
         if (error) return res.json({ success: false, error: error })
         else return res.json(result);
     });
@@ -134,7 +106,7 @@ router.get(
         req.session.return_url = req.query.return_url;
         next();
     },
-    passport.authenticate('facebook', { scope: ['user_location', 'user_gender', 'user_link', 'user_friends', 'user_posts'] })
+    passport.authenticate('facebook', { scope: ['user_location', 'user_gender', 'user_link'] })
 );
 
 router.get(

@@ -6,9 +6,9 @@ const JwtStrategy = require('passport-jwt').Strategy
 const ExtractJwt = require('passport-jwt').ExtractJwt
 const keys = require('../config/keys');
 const mongoose = require('mongoose');
-const cookieParser = require('cookie-parser');
 
-const User = mongoose.model('users');
+const User = require('../models/user-model');
+const UserRepository = require('../repositories/user-repository');
 
 passport.serializeUser(function (user, done) {
     done(null, user);
@@ -26,18 +26,13 @@ let opts = {
 
 passport.use(new JwtStrategy(opts, (jwt_payload, done) => {
 
-    User.getUserById(jwt_payload.user.id, (err, user) => {
+    UserRepository.get_user_by_id(jwt_payload.user.id, (err, user) => {
+        console.log(jwt_payload.user);
         if (err) {
             return done(err, false);
         }
         if (user) {
-            return done(null, {
-                id: user.id,
-                fullname: user.fullname,
-                username: user.username,
-                email: user.email,
-                scope: user.scope.length > 0 ? user.scope : undefined
-            });
+            return done(null, UserModel.set_existing_user_for_token_key(user));
         } else {
             return done(null, false);
         }
@@ -55,16 +50,13 @@ passport.use(new GoogleStrategy({
 
         if (existing_user) {
 
-            returning_user.id = existing_user.id;
-            returning_user.fullname = existing_user.fullname;
-            returning_user.email = existing_user.email;
-            returning_user.username = existing_user.username;
-            returning_user.scope = existing_user.scope.length > 0 ? existing_user.scope : undefined;
+            // set returning_user for token key
+            returning_user = UserRepository.set_existing_user_for_token_key(existing_user);
 
             return done(null, returning_user);
 
         } else {
-            const new_user = new User({
+            const user = new User({
                 fullname: email.displayName,
                 gender: email.gender == 'male' ? true : false,
                 email: email.emails[0].value,
@@ -72,13 +64,12 @@ passport.use(new GoogleStrategy({
                 "google.id": email.id
             });
 
-            new_user
+            user
                 .save()
-                .then(user => {
+                .then(new_user => {
 
-                    returning_user.id = user.id;
-                    returning_user.fullname = user.fullname;
-                    returning_user.email = user.email;
+                    // set returning_user for token key
+                    returning_user = UserRepository.set_new_user_for_token_key(new_user);
 
                     return done(null, returning_user);
                 });
@@ -99,16 +90,13 @@ passport.use(new FacebookStrategy({
 
         if (existing_user) {
 
-            returning_user.id = existing_user.id;
-            returning_user.fullname = existing_user.fullname;
-            returning_user.email = existing_user.email;
-            returning_user.username = existing_user.username;
-            returning_user.scope = existing_user.scope.length > 0 ? existing_user.scope : undefined;
+            // set returning_user for token key
+            returning_user = UserRepository.set_existing_user_for_token_key(existing_user);
 
             return cb(null, returning_user);
 
         } else {
-            const new_user = new User({
+            const user = new User({
                 fullname: profile.displayName,
                 gender: profile.gender == 'male' ? true : false,
                 email: profile.emails[0].value,
@@ -117,13 +105,12 @@ passport.use(new FacebookStrategy({
                 "facebook.url": profile.profileUrl,
             });
 
-            new_user
+            user
                 .save()
-                .then(user => {
+                .then(new_user => {
 
-                    returning_user.id = user.id;
-                    returning_user.fullname = user.fullname;
-                    returning_user.email = user.email;
+                    // set returning_user for token key
+                    returning_user = UserRepository.set_new_user_for_token_key(new_user);
 
                     return cb(null, returning_user);
                 });
@@ -143,33 +130,29 @@ passport.use(new SteamStrategy({
 
         if (existing_user) {
 
-            returning_user.id = existing_user.id;
-            returning_user.fullname = existing_user.fullname;
-            returning_user.email = existing_user.email;
-            returning_user.username = existing_user.username;
-            returning_user.scope = existing_user.scope.length > 0 ? existing_user.scope : undefined;
+            // set returning_user for token key
+            returning_user = UserRepository.set_existing_user_for_token_key(existing_user);
 
-            return done(null, returning_user);
+            return cb(null, returning_user);
+
 
         } else {
-            const new_user = new User({
+            const user = new User({
                 "steam.nick": profile.displayName,
                 "steam.id": profile.id,
                 "steam.avatar": profile.photos[0].value,
                 "steam.url": profile._json.profileurl
             });
 
-            new_user
+            user
                 .save()
-                .then(user => {
+                .then(new_user => {
 
-                    returning_user.id = user.id;
-                    returning_user.fullname = user.fullname;
-                    returning_user.email = user.email;
+                    // set returning_user for token key
+                    returning_user = UserRepository.set_new_user_for_token_key(new_user);
 
                     return done(null, returning_user);
                 });
         }
     });
-}
-));
+}));
