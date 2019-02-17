@@ -27,12 +27,11 @@ let opts = {
 passport.use(new JwtStrategy(opts, (jwt_payload, done) => {
 
     UserRepository.get_user_by_id(jwt_payload.user.id, (err, user) => {
-        console.log(jwt_payload.user);
         if (err) {
             return done(err, false);
         }
         if (user) {
-            return done(null, UserModel.set_existing_user_for_token_key(user));
+            return done(null, UserRepository.set_existing_user_for_token_key(user));
         } else {
             return done(null, false);
         }
