@@ -10,10 +10,12 @@ const keys = require('./config/keys');
 const session = require('express-session');
 
 // routes
-const auth_route = require('./routes/auth-routes')
+const auth_route = require('./routes/auth-route')
+const permission_route = require('./routes/permission-route')
 
 // models
 require('./models/user-model');
+require('./models/permission-model');
 
 // passport setup
 require('./services/passport-setup');
@@ -44,6 +46,7 @@ app.use(body_parser.json());
 
 // routes
 app.use(auth_route.path, auth_route);
+app.use(permission_route.path, permission_route);
 
 app.get('/', (req, res) => {
     if (req.user) res.send(req.user);
