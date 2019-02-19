@@ -1,8 +1,8 @@
-const mongoose = require('mongoose');
 const crypto = require('crypto');
 const randomstring = require('randomstring');
 const nodemailer = require('nodemailer');
 const keys = require('../config/keys');
+const jwt = require('jsonwebtoken');
 
 const User = require('../models/user-model');
 
@@ -15,7 +15,8 @@ set_existing_user_for_token_key = function (existing_user) {
         fullname: existing_user.fullname,
         email: existing_user.email,
         username: existing_user.username,
-        scope: existing_user.scope.length > 0 ? existing_user.scope : undefined
+        // scope: existing_user.scope.length > 0 ? existing_user.scope : undefined,
+        role: existing_user.role
     };
 }
 
@@ -99,6 +100,22 @@ login = function (user, callback) {
             return callback({ code: 2003 }, null);
         }
     })
+}
+
+check_token_key = function (authorization_header, callback) {
+    // Authorization header = "JWT {token_key}"
+    // first 4 characters will be deleted and be taken token key to decode
+    jwt.verify(authorization_header.substring(4), keys.token_key.secret, (err, decoded) => {
+        return callback(err, decoded);
+    });
+}
+
+check_permission = function (role, website_requested_url, callback) {
+    // requested from website
+    if (website_requested_url) {
+        // check permission for requested url of website
+
+    }
 }
 
 forget_password = function (email, callback) {
@@ -197,4 +214,5 @@ module.exports = {
     login: login,
     forget_password: forget_password,
     change_passsword: change_passsword,
+    check_token_key: check_token_key
 }

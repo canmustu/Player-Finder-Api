@@ -1,7 +1,4 @@
 const mongoose = require('mongoose');
-const crypto = require('crypto');
-const randomstring = require('randomstring');
-const nodemailer = require('nodemailer');
 
 // user schema
 const UserSchema = mongoose.Schema({
@@ -42,10 +39,11 @@ const UserSchema = mongoose.Schema({
         type: Date,
         required: false,
     },
-    scope: [{
+    role: {
         type: String,
-        required: false
-    }],
+        required: true,
+        default: 'normal_user'
+    },
     "friend_requests": [
         {
             user: {

@@ -55,9 +55,26 @@ router.post('/register', (req, res) => {
 // verify token key
 router.get('/verify_token_key', passport.authenticate('jwt', { session: false }),
     function (req, res) {
-        jwt.verify(req.get('Authorization').substring(4), keys.token_key.secret, (err, decoded) => {
-            if (err) res.json({ success: false, err: err.msg });
+        UserRepository.check_token_key(req.get('Authorization'), (error, decoded) => {
+            // if token key is invalid
+            if (error) res.json({ success: false, error: { msg: err.msg, code: 4001 } });
+            // if token key is valid
             else res.json({ success: true });
+        });
+    }
+);
+
+// check permission to enter page
+router.get('/check_permission', passport.authenticate('jwt', { session: false }),
+    function (req, res) {
+        UserRepository.check_token_key(req.get('Authorization'), req.query.requested_url, (error, decoded) => {
+            console.log(req.query.requested_url);
+            // if token key is invalid
+            if (error) res.json({ success: false, error: { msg: err.msg, code: 4001 } });
+            // if token key is valid
+            else {
+                UserRepository.check_permission()
+            }
         });
     }
 );
