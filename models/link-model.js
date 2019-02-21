@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-require('../enums/link-type-enum');
+const LinkTypes = require('../enums/link-type-enum');
 
 // user schema
 const LinkSchema = mongoose.Schema({
@@ -14,4 +14,4 @@ const LinkSchema = mongoose.Schema({
     }
 }, { versionKey: false, timestamps: { createdAt: 'created_at', updatedAt: false } });
 
-module.exports = mongoose.model('permissions', PermissionSchema);
+module.exports = mongoose.model('links', LinkSchema);
