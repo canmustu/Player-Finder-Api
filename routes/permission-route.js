@@ -16,7 +16,7 @@ router.post('/check_permission', passport.authenticate('jwt', { session: false }
         let requested_url = req.body.requested_url;
         if (requested_url) {
             PermissionRepository.check_permission(req.user.role, requested_url).then(result => {
-                res.json({ result });
+                res.json({ success: result.success });
             });
         } else {
             res.json({ success: false });

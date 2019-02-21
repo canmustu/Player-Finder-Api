@@ -219,9 +219,9 @@ check_permission3 = async function (role, requested_url) {
             await Link.findOne({ url: requested_url }, { _id: 1 }).then(link => {
                 if (link && link._id) {
                     // check if user has permission for the link
-                    permission = url_permissions.indexOf(link._id.toString()) !== -1;
+                    permission_success = url_permissions.indexOf(link._id.toString()) !== -1;
                     // assign to result
-                    result = { success: permission };
+                    result = { success: permission_success };
                 }
                 else {
                     result = { success: false };
