@@ -76,10 +76,10 @@ check_permission = async function (role, requested_url) {
             ]
         );
 
-        // result sub_permission to temp
+        // aggregation_result's sub_permission to temp
         sub_permissions_temp = aggregation_result[0].sub_permissions;
 
-        // allowed urls are being adding to url_permissions uniquely
+        // allowed urls are being adding to url_permissions UNIQUELY
         url_permissions = [
             ...new Set(
                 [
@@ -96,9 +96,8 @@ check_permission = async function (role, requested_url) {
         if (link && link._id) {
             // check if user has permission for the link
             permission_success = url_permissions.indexOf(link._id.toString()) !== -1;
-            // assign to result
 
-            // 200 Success
+            // 200 Success or 401 Unauthorized
             result = { success: permission_success };
         }
         else {
