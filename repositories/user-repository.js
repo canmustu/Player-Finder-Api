@@ -134,14 +134,6 @@ check_token_key = function (authorization_header, callback) {
     });
 }
 
-check_permission = function (role, website_requested_url, callback) {
-    // requested from website
-    if (website_requested_url) {
-        // check permission for requested url of website
-
-    }
-}
-
 forget_password = function (email, callback) {
     const new_password = randomstring.generate({
         length: 6,

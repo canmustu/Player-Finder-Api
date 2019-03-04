@@ -13,9 +13,22 @@ router.path = '/user'
 // verify token key
 router.post('/get_profile', passport.authenticate('jwt', { session: false }),
     (req, res) => {
-        UserRepository.get_profile(req.user.id, (error, user) => {
+
+        // target user id
+        let target_user_id;
+        // if user_id query exists
+        if (req.body.user_id) target_user_id = req.body.user_id; // user from body
+        else target_user_id = req.user.id; // user from token_key
+
+        UserRepository.get_profile(target_user_id, (error, result) => {
             if (error) return res.json({ success: false, error: error })
-            else res.json(user);
+            else {
+                res.json({
+                    success: result.success,
+                    user: result.user,
+                    "is_same_user": req.user.id == target_user_id
+                });
+            }
         });
     }
 );
