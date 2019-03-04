@@ -38,7 +38,8 @@ app.use(session({
 }));
 
 
-app.use(logger_middleware);
+// logger middleware
+// app.use(logger_middleware);
 
 app.use(passport.initialize());
 
@@ -49,9 +50,11 @@ app.use(body_parser.json());
 // routes
 const auth_route = require('./routes/auth-route')
 const permission_route = require('./routes/permission-route')
+const user_route = require('./routes/user-route')
 
 app.use(auth_route.path, auth_route);
 app.use(permission_route.path, permission_route);
+app.use(user_route.path, user_route);
 
 //
 

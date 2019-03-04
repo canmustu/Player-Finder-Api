@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const user_role_type_enum = require('../enums/user-role-type-enum');
 
 // user schema
 const UserSchema = mongoose.Schema({
@@ -39,26 +40,59 @@ const UserSchema = mongoose.Schema({
         type: Date,
         required: false,
     },
+    profile_visibility: {
+        type: Boolean,
+        default: true,
+        required: true,
+    },
+    location: {
+        country: {
+            type: String,
+            required: false,
+        },
+        city: {
+            type: String,
+            required: false,
+        }
+    },
     role: {
         type: String,
         required: true,
-        default: 'normal_user'
+        default: user_role_type_enum.NORMAL_USER
     },
-    "friend_requests": [
+    "friends": [
         {
             user: {
-                _id: {
+                id: {
                     type: mongoose.Schema.Types.ObjectId,
-                    required: false,
+                    required: true,
                 },
                 username: {
-                    type: Date,
-                    required: false,
+                    type: String,
+                    required: true,
                 }
             },
             requested_at: {
                 type: Date,
-                required: false,
+                required: true,
+            }
+        }
+    ],
+    "friend_requests": [
+        {
+            user: {
+                id: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    required: true,
+                },
+                username: {
+                    type: String,
+                    required: true,
+                }
+            },
+            requested_at: {
+                type: Date,
+                required: true,
             }
         }
     ],

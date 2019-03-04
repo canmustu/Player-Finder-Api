@@ -34,6 +34,30 @@ get_user_by_id = function (id, callback) {
     User.findOne(query, callback);
 }
 
+get_profile = function (user_id, callback) {
+    // check if username exists
+    User.findById(user_id, {
+        "fullname": 1,
+        "username": 1,
+        "avatar": 1,
+        "last_seen": 1,
+        "karma_point": 1,
+        "location": 1,
+        "profile_visibility": 1
+    }, (error, user) => {
+        // if error
+        if (error) return callback({ error: { msg: error, code: '1001' } }, null);
+        // if profile is private
+        else if (!user.profile_visibility){
+            return callback({ error: { msg: "Profile is private.", code: '2005' } }, null);
+        }
+        // if username exists
+        else {
+            return callback(null, { success: true, user: user });
+        }
+    })
+}
+
 register = function (user, callback) {
     // check if email exists
     User.countDocuments({ email: user.email }, (error_email, email_count) => {
@@ -214,5 +238,6 @@ module.exports = {
     login: login,
     forget_password: forget_password,
     change_passsword: change_passsword,
-    check_token_key: check_token_key
+    check_token_key: check_token_key,
+    get_profile: get_profile
 }
