@@ -63,6 +63,9 @@ passport.use(new GoogleStrategy({
                 "google.id": email.id
             });
 
+            // avatar of google size changed
+            user.avatar = user.avatar.replace("sz=50", "sz=200");
+
             user
                 .save()
                 .then(new_user => {
@@ -84,6 +87,8 @@ passport.use(new FacebookStrategy({
     profileFields: ['id', 'displayName', 'gender', 'photos', 'emails', 'profileUrl'],
 }, (accessToken, refreshToken, profile, cb) => {
 
+    console.log(profile)
+
     User.findOne({ "facebook.id": profile.id }).then(existing_user => {
         let returning_user = {};
 
@@ -99,7 +104,7 @@ passport.use(new FacebookStrategy({
                 fullname: profile.displayName,
                 gender: profile.gender == 'male' ? true : false,
                 email: profile.emails[0].value,
-                avatar: profile.photos[0].value,
+                avatar: "http://graph.facebook.com/" + profile.id + "/picture?type=large",
                 "facebook.id": profile.id,
                 "facebook.url": profile.profileUrl,
             });
