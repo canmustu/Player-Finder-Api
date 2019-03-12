@@ -21,7 +21,7 @@ router.post('/get_profile', passport.authenticate('jwt', { session: false }),
         else target_user_id = req.user.id; // user from token_key
 
         UserRepository.get_profile(target_user_id, (error, result) => {
-            if (error) return res.json({ success: false, error: error })
+            if (error) return res.json({ success: false, error: error });
             else {
                 res.json({
                     success: result.success,
