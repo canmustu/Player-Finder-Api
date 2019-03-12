@@ -87,8 +87,6 @@ passport.use(new FacebookStrategy({
     profileFields: ['id', 'displayName', 'gender', 'photos', 'emails', 'profileUrl'],
 }, (accessToken, refreshToken, profile, cb) => {
 
-    console.log(profile)
-
     User.findOne({ "facebook.id": profile.id }).then(existing_user => {
         let returning_user = {};
 
