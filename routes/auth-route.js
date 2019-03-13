@@ -20,7 +20,14 @@ function create_token_key(user) {
 }
 
 function redirect_to_website(req, res) {
-    res.redirect(keys.website_url + 'auth/loggedin/' + create_token_key(req.user) + '?return_url=' + (req.session.return_url ? req.session.return_url : ''));
+
+    success_type = req.user.success_type;
+
+    req.user.success_type = undefined;
+
+    res.redirect(keys.website_url + 'auth/loggedin/' + create_token_key(req.user) +
+        '?return_url=' + (req.session.return_url ? req.session.return_url : '') +
+        '&success_type=' + success_type);
 }
 
 // login
