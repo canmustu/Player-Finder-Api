@@ -3,6 +3,7 @@ const randomstring = require('randomstring');
 const nodemailer = require('nodemailer');
 const keys = require('../config/keys');
 const jwt = require('jsonwebtoken');
+const encryption = require('../utilization/encryption');
 
 const User = require('../models/user-model');
 
@@ -48,7 +49,7 @@ get_profile = function (user_id, callback) {
         // if error
         if (error) return callback({ error: { msg: error, code: '1001' } }, null);
         // if profile is private
-        else if (!user.profile_visibility){
+        else if (!user.profile_visibility) {
             return callback({ error: { msg: "Profile is private.", code: '2005' } }, null);
         }
         // if username exists
@@ -73,7 +74,7 @@ register = function (user, callback) {
                 if (username_count == 0) {
                     try {
                         // encrypt the following password
-                        user.password = encrypt_text(user.password, 10);
+                        user.password = encyrpt_as_a_password(user.password);
                         // insert to db
                         user
                             .save()
@@ -108,7 +109,7 @@ login = function (user, callback) {
         if (existing_user) {
 
             // compare password
-            if (compare_password(encrypt_text(user.password, 10), existing_user.password)) {
+            if (compare_password(encyrpt_as_a_password(user.password), existing_user.password)) {
                 // login successful
 
                 return callback(null, {
@@ -219,6 +220,10 @@ encrypt_text = function (text, times) {
         text = get_hash(text + salt_for_password)
     }
     return text;
+}
+
+encyrpt_as_a_password = function (text) {
+    return encrypt_text(text, 10);
 }
 
 module.exports = {
