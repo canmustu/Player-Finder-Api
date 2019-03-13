@@ -52,6 +52,9 @@ passport.use(new GoogleStrategy({
             // set returning_user for token key
             returning_user = UserRepository.set_existing_user_for_token_key(existing_user);
 
+            // return login info
+            returning_user.success_type = "login";
+
             return done(null, returning_user);
 
         } else {
@@ -62,6 +65,7 @@ passport.use(new GoogleStrategy({
                 avatar: email.photos[0].value,
                 "google.id": email.id
             });
+            user.username = "GUEST" + user._id;
 
             // avatar of google size changed
             user.avatar = user.avatar.replace("sz=50", "sz=200");
@@ -72,6 +76,9 @@ passport.use(new GoogleStrategy({
 
                     // set returning_user for token key
                     returning_user = UserRepository.set_new_user_for_token_key(new_user);
+
+                    // return register info
+                    returning_user.success_type = "register";
 
                     return done(null, returning_user);
                 });
@@ -84,7 +91,7 @@ passport.use(new FacebookStrategy({
     clientID: keys.facebook.appID,
     clientSecret: keys.facebook.appSecret,
     callbackURL: "/auth/facebook/callback",
-    profileFields: ['id', 'displayName', 'gender', 'photos', 'emails', 'profileUrl'],
+    profileFields: ['id', 'displayName', 'gender', 'emails', 'profileUrl'],
 }, (accessToken, refreshToken, profile, cb) => {
 
     User.findOne({ "facebook.id": profile.id }).then(existing_user => {
@@ -94,6 +101,9 @@ passport.use(new FacebookStrategy({
 
             // set returning_user for token key
             returning_user = UserRepository.set_existing_user_for_token_key(existing_user);
+
+            // return login info
+            returning_user.success_type = "login";
 
             return cb(null, returning_user);
 
@@ -106,6 +116,7 @@ passport.use(new FacebookStrategy({
                 "facebook.id": profile.id,
                 "facebook.url": profile.profileUrl,
             });
+            user.username = "GUEST" + user._id;
 
             user
                 .save()
@@ -113,6 +124,9 @@ passport.use(new FacebookStrategy({
 
                     // set returning_user for token key
                     returning_user = UserRepository.set_new_user_for_token_key(new_user);
+
+                    // return register info
+                    returning_user.success_type = "register";
 
                     return cb(null, returning_user);
                 });
@@ -136,7 +150,6 @@ passport.use(new SteamStrategy({
             returning_user = UserRepository.set_existing_user_for_token_key(existing_user);
 
             return cb(null, returning_user);
-
 
         } else {
             const user = new User({
