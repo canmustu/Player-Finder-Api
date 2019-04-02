@@ -6,9 +6,12 @@ const express = require('express');
 const router = express.Router();
 
 const User = require('../models/user-model');
+
 const UserRepository = require('../repositories/user-repository');
 
-router.path = '/auth'
+const AuthenticationService = require('../services/authentication-service');
+
+router.path = '/auth';
 
 function create_token_key(user) {
     return jwt.sign({
@@ -50,7 +53,6 @@ router.post('/register', (req, res) => {
         email: req.body.email,
         username: req.body.username,
         password: req.body.password,
-        gender: req.body.gender
     });
 
     UserRepository.register(user, (error, result) => {
@@ -60,8 +62,7 @@ router.post('/register', (req, res) => {
 });
 
 // verify token key
-router.get('/verify_token_key', passport.authenticate('jwt', { session: false }),
-    function (req, res) {
+router.get('/verify_token_key', passport.authenticate('jwt', { session: false }), (req, res) => {
         UserRepository.check_token_key(req.get('Authorization'), (error, decoded) => {
             // if token key is invalid
             if (error) res.json({ success: false, error: { msg: err.msg, code: 4001 } });
@@ -71,24 +72,22 @@ router.get('/verify_token_key', passport.authenticate('jwt', { session: false })
     }
 );
 
-// check permission to enter page
-router.get('/check_permission', passport.authenticate('jwt', { session: false }),
-    function (req, res) {
-        UserRepository.check_token_key(req.get('Authorization'), req.query.requested_url, (error, decoded) => {
-            console.log(req.query.requested_url);
-            // if token key is invalid
-            if (error) res.json({ success: false, error: { msg: err.msg, code: 4001 } });
-            // if token key is valid
-            else {
-                UserRepository.check_permission()
-            }
-        });
+// check permission access control
+router.post('/check_permission', passport.authenticate('jwt', { session: false }),
+    (req, res) => {
+        let requested_url = req.body.requested_url;
+        if (requested_url) {
+            AuthenticationService.check_permission(req.user.role, requested_url).then(result => {
+                res.json({ success: result.success });
+            });
+        } else {
+            res.json({ success: false });
+        }
     }
 );
 
 // decode token key of Authorization header
-router.get('/decode_token_key', passport.authenticate('jwt', { session: false }),
-    function (req, res) {
+router.get('/decode_token_key', passport.authenticate('jwt', { session: false }), (req, res) => {
         // Authorization header = "JWT {token_key}"
         // first 4 characters will be deleted and be taken token key to decode
         jwt.verify(req.get('Authorization').substring(4), keys.token_key.secret, (err, decoded) => {

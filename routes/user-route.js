@@ -8,12 +8,14 @@ const router = express.Router();
 const User = require('../models/user-model');
 const UserRepository = require('../repositories/user-repository');
 
+const AuthenticationService = require('../services/authentication-service');
+
 router.path = '/user'
 
 // verify token key
-router.post('/get_profile', passport.authenticate('jwt', { session: false }),
-    (req, res) => {
+router.get('/get_profile', passport.authenticate('jwt', { session: false }), (req, res) => {
 
+    AuthenticationService.access_control(req, res, { router_path: router.path }, () => {
         // target user id
         let target_user_id;
         // if user_id query exists
@@ -26,11 +28,12 @@ router.post('/get_profile', passport.authenticate('jwt', { session: false }),
                 res.json({
                     success: result.success,
                     user: result.user,
-                    "is_same_user": req.user.id == target_user_id
+                    is_same_user: req.user.id == target_user_id
                 });
             }
         });
-    }
-);
+    });
+
+});
 
 module.exports = router;

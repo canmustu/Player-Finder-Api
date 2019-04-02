@@ -19,5 +19,6 @@ module.exports = {
     steam: {
         apiKey: '8E91974DBD8A1F0DCE262C827D56BCD6',
     },
-    website_url: 'http://localhost:4200/'
+    website_url: 'http://localhost:4200/',
+    api_url: 'http://localhost'
 }

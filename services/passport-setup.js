@@ -11,10 +11,12 @@ const User = require('../models/user-model');
 const UserRepository = require('../repositories/user-repository');
 
 passport.serializeUser(function (user, done) {
+    console.log('serialize', user);
     done(null, user);
 });
 
 passport.deserializeUser(function (user, done) {
+    console.log('deserialize', user);
     done(null, user);
 });
 
@@ -27,10 +29,11 @@ let opts = {
 passport.use(new JwtStrategy(opts, (jwt_payload, done) => {
 
     UserRepository.get_user_by_id(jwt_payload.user.id, (err, user) => {
+        
         if (err) {
             return done(err, false);
         }
-        if (user) {
+        else if (user) {
             return done(null, UserRepository.set_existing_user_for_token_key(user));
         } else {
             return done(null, false);
@@ -93,7 +96,6 @@ passport.use(new FacebookStrategy({
     callbackURL: "/auth/facebook/callback",
     profileFields: ['id', 'displayName', 'gender', 'emails', 'profileUrl'],
 }, (accessToken, refreshToken, profile, cb) => {
-
     User.findOne({ "facebook.id": profile.id }).then(existing_user => {
         let returning_user = {};
 
@@ -140,7 +142,6 @@ passport.use(new SteamStrategy({
     realm: 'http://localhost/',
     apiKey: keys.steam.apiKey
 }, (identifier, profile, done) => {
-
     User.findOne({ "steam.id": profile.id }).then(existing_user => {
         let returning_user = {};
 

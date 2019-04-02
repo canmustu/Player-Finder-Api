@@ -107,11 +107,9 @@ login = function (user, callback) {
         if (error) return callback({ error: { msg: error, code: 1001 } }, null);
         // if user exists
         if (existing_user) {
-
             // compare password
             if (compare_password(encyrpt_as_a_password(user.password), existing_user.password)) {
                 // login successful
-
                 return callback(null, {
                     success: true,
                     user: set_existing_user_for_token_key(existing_user)
@@ -130,7 +128,9 @@ login = function (user, callback) {
 check_token_key = function (authorization_header, callback) {
     // Authorization header = "JWT {token_key}"
     // first 4 characters will be deleted and be taken token key to decode
-    jwt.verify(authorization_header.substring(4), keys.token_key.secret, (err, decoded) => {
+    let token_key = authorization_header.substring(4);
+
+    jwt.verify(token_key, keys.token_key.secret, (err, decoded) => {
         return callback(err, decoded);
     });
 }
