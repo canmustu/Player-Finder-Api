@@ -62,33 +62,17 @@ const UserSchema = mongoose.Schema({
     },
     "friends": [
         {
-            user: {
-                id: {
-                    type: mongoose.Schema.Types.ObjectId,
-                    required: true,
-                },
-                username: {
-                    type: String,
-                    required: true,
-                }
-            },
-            requested_at: {
-                type: Date,
+            user_id: {
+                type: mongoose.Schema.Types.ObjectId,
                 required: true,
             }
         }
     ],
     "friend_requests": [
         {
-            user: {
-                id: {
-                    type: mongoose.Schema.Types.ObjectId,
-                    required: true,
-                },
-                username: {
-                    type: String,
-                    required: true,
-                }
+            user_id: {
+                type: mongoose.Schema.Types.ObjectId,
+                required: true,
             },
             requested_at: {
                 type: Date,
@@ -112,24 +96,24 @@ const UserSchema = mongoose.Schema({
             required: false
         }
     },
-    steam: {
-        id: {
-            type: String,
-            required: false
-        },
-        url: {
-            type: String,
-            required: false
-        },
-        nick: {
-            type: String,
-            required: false
-        },
-        avatar: {
-            type: String,
-            required: false
-        }
-    },
+    // steam: {
+    //     id: {
+    //         type: String,
+    //         required: false
+    //     },
+    //     url: {
+    //         type: String,
+    //         required: false
+    //     },
+    //     nick: {
+    //         type: String,
+    //         required: false
+    //     },
+    //     avatar: {
+    //         type: String,
+    //         required: false
+    //     }
+    // },
 
 }, { versionKey: false, timestamps: { createdAt: 'created_at', updatedAt: false } });
 

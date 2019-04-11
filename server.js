@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
+const http = require('http').Server(app);
 //const cookie_session = require('cookie-session');
 const cookie_parser = require('cookie-parser');
 const body_parser = require('body-parser');
@@ -37,7 +38,6 @@ app.use(session({
     }
 }));
 
-
 // logger middleware
 // app.use(logger_middleware);
 
@@ -65,6 +65,11 @@ app.get('/', (req, res) => {
 
 // start project
 const port = process.env.PORT || 80;
-app.listen(port, () => {
+const server = app.listen(port, () => {
     console.log('Server started on port', port);
 });
+
+const io = require('socket.io').listen(server);
+
+// connect to socket.io
+require('./services/socket-service')(io);
