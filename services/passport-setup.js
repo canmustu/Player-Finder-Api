@@ -27,14 +27,12 @@ let opts = {
 };
 
 passport.use(new JwtStrategy(opts, (jwt_payload, done) => {
-
     UserRepository.get_user_by_id(jwt_payload.user.id, (err, user) => {
-        
         if (err) {
             return done(err, false);
         }
         else if (user) {
-            return done(null, UserRepository.set_existing_user_for_token_key(user));
+            return done(null, UserRepository.set_user_for_token_key(user));
         } else {
             return done(null, false);
         }
@@ -53,7 +51,7 @@ passport.use(new GoogleStrategy({
         if (existing_user) {
 
             // set returning_user for token key
-            returning_user = UserRepository.set_existing_user_for_token_key(existing_user);
+            returning_user = UserRepository.UserRepository.set_user_for_token_key(existing_user);
 
             // return login info
             returning_user.success_type = "login";
@@ -78,7 +76,7 @@ passport.use(new GoogleStrategy({
                 .then(new_user => {
 
                     // set returning_user for token key
-                    returning_user = UserRepository.set_new_user_for_token_key(new_user);
+                    returning_user = UserRepository.set_user_for_token_key(new_user);
 
                     // return register info
                     returning_user.success_type = "register";
@@ -102,7 +100,7 @@ passport.use(new FacebookStrategy({
         if (existing_user) {
 
             // set returning_user for token key
-            returning_user = UserRepository.set_existing_user_for_token_key(existing_user);
+            returning_user = UserRepository.set_user_for_token_key(existing_user);
 
             // return login info
             returning_user.success_type = "login";
@@ -125,7 +123,7 @@ passport.use(new FacebookStrategy({
                 .then(new_user => {
 
                     // set returning_user for token key
-                    returning_user = UserRepository.set_new_user_for_token_key(new_user);
+                    returning_user = UserRepository.set_user_for_token_key(new_user);
 
                     // return register info
                     returning_user.success_type = "register";
@@ -148,7 +146,7 @@ passport.use(new SteamStrategy({
         if (existing_user) {
 
             // set returning_user for token key
-            returning_user = UserRepository.set_existing_user_for_token_key(existing_user);
+            returning_user = UserRepository.set_user_for_token_key(existing_user);
 
             return cb(null, returning_user);
 
@@ -165,10 +163,12 @@ passport.use(new SteamStrategy({
                 .then(new_user => {
 
                     // set returning_user for token key
-                    returning_user = UserRepository.set_new_user_for_token_key(new_user);
+                    returning_user = UserRepository.set_user_for_token_key(new_user);
 
                     return done(null, returning_user);
                 });
         }
     });
 }));
+
+

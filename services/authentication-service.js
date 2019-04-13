@@ -103,6 +103,8 @@ check_permission = async function (role, requested_url) {
     return result;
 }
 
+// only for nodejs authentcation required route methods
+// this checks if the user can access the route url
 access_control = function (req, res, params, callback) {
 
     // delete slashes of end of url (http://.../../ -> last slash deleted)

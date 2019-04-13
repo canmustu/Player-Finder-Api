@@ -43,40 +43,48 @@ const UserSchema = mongoose.Schema({
     profile_visibility: {
         type: Boolean,
         default: true,
-        required: true,
-    },
-    location: {
-        country: {
-            type: String,
-            required: false,
-        },
-        city: {
-            type: String,
-            required: false,
-        }
+        required: true
     },
     role: {
         type: String,
         required: true,
         default: user_role_type_enum.NORMAL_USER
     },
+    inbox: [
+        {
+            from: {
+                user_id: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    required: true,
+                }
+            },
+            message: {
+                type: String,
+                required: false
+            }
+        }
+    ],
     "friends": [
         {
-            user_id: {
-                type: mongoose.Schema.Types.ObjectId,
-                required: true,
+            user: {
+                id: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    required: true,
+                }
             }
         }
     ],
     "friend_requests": [
         {
-            user_id: {
-                type: mongoose.Schema.Types.ObjectId,
-                required: true,
-            },
-            requested_at: {
-                type: Date,
-                required: true,
+            user: {
+                id: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    required: true,
+                },
+                requested_at: {
+                    type: Date,
+                    required: true,
+                }
             }
         }
     ],

@@ -12,9 +12,8 @@ const AuthenticationService = require('../services/authentication-service');
 
 router.path = '/user'
 
-// verify token key
+// get profile - authenticated user
 router.get('/get_profile', passport.authenticate('jwt', { session: false }), (req, res) => {
-
     AuthenticationService.access_control(req, res, { router_path: router.path }, () => {
         // target user id
         let target_user_id;
@@ -33,7 +32,47 @@ router.get('/get_profile', passport.authenticate('jwt', { session: false }), (re
             }
         });
     });
+});
 
+// get profile - user_id user
+router.get('/get_profile/:user_id', (req, res) => {
+
+    let target_user_id = req.params.user_id;
+    console.log(target_user_id);
+
+    UserRepository.get_profile(target_user_id, (error, result) => {
+        if (error) return res.json({ success: false, error: error });
+        else {
+            res.json({
+                success: result.success,
+                user: result.user
+            });
+        }
+    });
+});
+
+// get profile - user_id user
+router.get('/get_conversation/:user_id', passport.authenticate('jwt', { session: false }), (req, res) => {
+    AuthenticationService.access_control(req, res, { router_path: router.path }, () => {
+        // target user id from url
+        let target_user_id = req.params.user_id;
+        // source user id from token key
+        let source_user_id = req.user.id;
+
+        if(target_user_id && source_user_id) {
+
+            UserRepository.get_conversation(target_user_id, source_user_id, (error, result) => {
+                if (error) return res.json({ success: false, error: error });
+                else {
+                    res.json({
+                        success: result.success,
+                        conversation: result.conversation,
+                    });
+                }
+            });
+
+        }
+    });
 });
 
 module.exports = router;

@@ -6,27 +6,18 @@ const jwt = require('jsonwebtoken');
 const encryption = require('../utilization/encryption');
 
 const User = require('../models/user-model');
+const TokenKeyService = require('../services/token-key-service');
 
 const salt_for_password = keys.encryption.salt_for_password;
 
-// set existing user for being created a token key
-set_existing_user_for_token_key = function (existing_user) {
+// return an object for token key claims
+set_user_for_token_key = function (user) {
     return {
-        id: existing_user.id,
-        fullname: existing_user.fullname,
-        email: existing_user.email,
-        username: existing_user.username,
-        // scope: existing_user.scope.length > 0 ? existing_user.scope : undefined,
-        role: existing_user.role
-    };
-}
-
-// set new user for being created a token key
-set_new_user_for_token_key = function (new_user) {
-    return {
-        id: new_user.id,
-        fullname: new_user.fullname,
-        email: new_user.email
+        id: user.id,
+        fullname: user.fullname,
+        email: user.email,
+        username: user.username,
+        role: user.role
     };
 }
 
@@ -40,18 +31,24 @@ get_profile = function (user_id, callback) {
     User.findById(user_id, {
         "fullname": 1,
         "username": 1,
+        "email": 1,
         "avatar": 1,
         "last_seen": 1,
         "karma_point": 1,
-        "location": 1,
         "profile_visibility": 1
     }, (error, user) => {
         // if error
-        if (error) return callback({ error: { msg: error, code: '1001' } }, null);
-        // if profile is private
-        else if (!user.profile_visibility) {
-            return callback({ error: { msg: "Profile is private.", code: '2005' } }, null);
+        if (error) return callback({ msg: error, code: '1001' }, null);
+        // if user not exists
+        else if (!user) {
+            return callback({ msg: error, code: '2003' }, null);
         }
+        
+        // if profile is private
+        // else if (!user.profile_visibility) {
+        //     return callback({ msg: "Profile is private.", code: '2005' }, null);
+        // }
+
         // if username exists
         else {
             return callback(null, { success: true, user: user });
@@ -63,13 +60,13 @@ register = function (user, callback) {
     // check if email exists
     User.countDocuments({ email: user.email }, (error_email, email_count) => {
         // if error
-        if (error_email) return callback({ error: { msg: error_email, code: '1001_1' } }, null);
+        if (error_email) return callback({ msg: error_email, code: '1001_1' }, null);
         // if email exists
         if (email_count == 0) {
             // check if username exists
             User.countDocuments({ username: user.username }, (error_username, username_count) => {
                 // if error
-                if (error_username) return callback({ error: { msg: error_username, code: '1001_2' } }, null);
+                if (error_username) return callback({ msg: error_username, code: '1001_2' }, null);
                 // if username exists
                 if (username_count == 0) {
                     try {
@@ -79,9 +76,12 @@ register = function (user, callback) {
                         user
                             .save()
                             .then(new_user => {
-                                // hidden password for return
-                                new_user.password = undefined;
-                                return callback(null, { success: true, user: new_user });
+                                // register successful
+                                return callback(null, {
+                                    success: true,
+                                    user: set_user_for_token_key(new_user),
+                                    token_key: TokenKeyService.create_token_key({ user: set_user_for_token_key(new_user) })
+                                });
                             });
                     } catch (error) {
                         return callback({ msg: error, code: '1001_3' }, null);
@@ -104,7 +104,7 @@ login = function (user, callback) {
     // check if user exists
     User.findOne(query, (error, existing_user) => {
         // if error
-        if (error) return callback({ error: { msg: error, code: 1001 } }, null);
+        if (error) return callback( { msg: error, code: 1001 }, null);
         // if user exists
         if (existing_user) {
             // compare password
@@ -112,7 +112,8 @@ login = function (user, callback) {
                 // login successful
                 return callback(null, {
                     success: true,
-                    user: set_existing_user_for_token_key(existing_user)
+                    user: set_user_for_token_key(existing_user),
+                    token_key: TokenKeyService.create_token_key({ user: set_user_for_token_key(existing_user) })
                 });
             } else {
                 // wrong password
@@ -154,13 +155,13 @@ forget_password = function (email, callback) {
                 var transporter = nodemailer.createTransport({
                     service: 'gmail',
                     auth: {
-                        user: 'finansalbt1@gmail.com',
-                        pass: 'finansal123'
+                        user: '..@gmail.com',
+                        pass: '..'
                     }
                 });
 
                 var mailOptions = {
-                    from: '👥 Finansal BT Mailer 👥 <finansalbt1@gmail.com>',
+                    from: '👥 .. 👥 <..@gmail.com>',
                     to: email,
                     subject: 'Şifremi Unuttum',
                     text: 'Yeni Şifreniz : ' + new_password
@@ -227,9 +228,7 @@ encyrpt_as_a_password = function (text) {
 }
 
 module.exports = {
-    User: User,
-    set_existing_user_for_token_key: set_existing_user_for_token_key,
-    set_new_user_for_token_key: set_new_user_for_token_key,
+    set_user_for_token_key: set_user_for_token_key,
     get_user_by_id: get_user_by_id,
     register: register,
     login: login,
