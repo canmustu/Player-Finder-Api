@@ -14,6 +14,7 @@ router.path = '/user'
 
 // get profile - authenticated user
 router.get('/get_profile', passport.authenticate('jwt', { session: false }), (req, res) => {
+    // check permission for this path
     AuthenticationService.access_control(req, res, { router_path: router.path }, () => {
         // target user id
         let target_user_id;
@@ -53,6 +54,7 @@ router.get('/get_profile/:user_id', (req, res) => {
 
 // get profile - user_id user
 router.get('/get_conversation/:user_id', passport.authenticate('jwt', { session: false }), (req, res) => {
+    // check permission for this path
     AuthenticationService.access_control(req, res, { router_path: router.path }, () => {
         // target user id from url
         let target_user_id = req.params.user_id;
@@ -77,6 +79,7 @@ router.get('/get_conversation/:user_id', passport.authenticate('jwt', { session:
 
 // add friend
 router.post('/add_friend', passport.authenticate('jwt', { session: false }), (req, res) => {
+    // check permission for this path
     AuthenticationService.access_control(req, res, { router_path: router.path }, () => {
         // target user id from body
         let target_user_id = req.body.user_id;
@@ -98,6 +101,7 @@ router.post('/add_friend', passport.authenticate('jwt', { session: false }), (re
 
 // accept friend request
 router.post('/accept_friend_request', passport.authenticate('jwt', { session: false }), (req, res) => {
+    // check permission for this path
     AuthenticationService.access_control(req, res, { router_path: router.path }, () => {
         // target user id from body
         let target_user_id = req.body.user_id;
@@ -107,6 +111,44 @@ router.post('/accept_friend_request', passport.authenticate('jwt', { session: fa
         if (target_user_id && source_user_id) {
 
             UserRepository.accept_friend_request(target_user_id, source_user_id, (error, result) => {
+                if (error) return res.json({ success: false, error: error });
+                else res.json(result);
+            });
+
+        } else {
+            return res.json({ success: false, error: { code: 2006 } });
+        }
+    });
+});
+
+// get friends
+router.post('/get_friends', passport.authenticate('jwt', { session: false }), (req, res) => {
+    // check permission for this path
+    AuthenticationService.access_control(req, res, { router_path: router.path }, () => {
+        // user id from token key
+        let user_id = req.user.id;
+
+        if (user_id) {
+            UserRepository.get_friends(user_id, (error, result) => {
+                if (error) return res.json({ success: false, error: error });
+                else res.json(result);
+            });
+
+        } else {
+            return res.json({ success: false, error: { code: 2006 } });
+        }
+    });
+});
+
+// get friend requests
+router.post('/get_friend_requests', passport.authenticate('jwt', { session: false }), (req, res) => {
+    // check permission for this path
+    AuthenticationService.access_control(req, res, { router_path: router.path }, () => {
+        // user id from token key
+        let user_id = req.user.id;
+
+        if (user_id) {
+            UserRepository.get_friend_requests(user_id, (error, result) => {
                 if (error) return res.json({ success: false, error: error });
                 else res.json(result);
             });

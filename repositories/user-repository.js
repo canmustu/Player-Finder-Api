@@ -20,6 +20,7 @@ set_user_for_token_key = function (user) {
         role: user.role
     };
 }
+//
 
 get_user_by_id = function (id, callback) {
     User.findById(id, callback);
@@ -89,7 +90,6 @@ add_friend = function (target_user_id, source_user_id, callback) {
                                 }
                             }
                         }, (error, result) => {
-                            console.log(error, result)
                             if (error) return callback({ code: '1001' }, null);
                             else if (result.n) return callback(null, { success: true });
                             else return callback({ code: 2003 }, null);
@@ -116,12 +116,9 @@ accept_friend_request = function (target_user_id, source_user_id, callback) {
 
     // check if user already friend
     User.countDocuments(query, (error, count) => {
-
-        // if error
-        console.log(error);
         if (error) return callback({ code: '1001' }, null);
 
-        // no friends
+        // no friends then add
         else if (count > 0) {
             // pull friend from friends_requests field
             User.updateOne(
@@ -184,6 +181,76 @@ accept_friend_request = function (target_user_id, source_user_id, callback) {
         }
     });
 }
+
+get_friends = function (user_id, callback) {
+
+    let query = [
+        {
+            $match: { _id: user_id }
+        },
+        {
+            $group: {
+                _id: null,
+                friends: { $push: "$friends.user.id" }
+            }
+        }
+    ];
+
+    console.log(query);
+
+    // getting friends of user
+    User.aggregate(query, (error, result) => {
+        console.log(result)
+
+        if (error) return callback({ code: '1001' }, null);
+        else if (result) {
+            let friend_ids = result.friends;
+            if (friend_ids) {
+
+            }
+            let query = { _id: { '$in': [] } };
+            User.find()
+            return callback(null, { success: true });
+        }
+        // no user
+        else return callback({ code: '2003' }, null);
+    });
+}
+
+//broken method
+get_friend_requests = function (user_id, callback) {
+
+    let query = [
+        {
+            $match: { _id: user_id }
+        },
+        {
+            $group: {
+                _id: null,
+                friends: { $push: "$friend_requests.user.id" }
+            }
+        }
+    ];
+
+    // getting friend_requests of user
+    User.aggregate(query, (error, result) => {
+
+        if (error) return callback({ code: '1001' }, null);
+        else if (result) {
+            let friend_ids = result.friends;
+            if (friend_ids) {
+
+            }
+            let query = { _id: { '$in': [] } };
+            User.find()
+            return callback(null, { success: true });
+        }
+        // no user
+        else return callback({ code: '2003' }, null);
+    });
+}
+
+// authentication
 
 register = function (user, callback) {
     // check if email exists
@@ -264,6 +331,8 @@ check_token_key = function (authorization_header, callback) {
         return callback(err, decoded);
     });
 }
+
+//
 
 
 
@@ -372,5 +441,6 @@ module.exports = {
     check_token_key: check_token_key,
     get_profile: get_profile,
     add_friend: add_friend,
-    accept_friend_request: accept_friend_request
+    accept_friend_request: accept_friend_request,
+    get_friends: get_friends
 }
