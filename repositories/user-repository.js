@@ -22,8 +22,7 @@ set_user_for_token_key = function (user) {
 }
 
 get_user_by_id = function (id, callback) {
-    let query = { _id: id };
-    User.findOne(query, callback);
+    User.findById(id, callback);
 }
 
 get_profile = function (user_id, callback) {
@@ -38,35 +37,165 @@ get_profile = function (user_id, callback) {
         "profile_visibility": 1
     }, (error, user) => {
         // if error
-        if (error) return callback({ msg: error, code: '1001' }, null);
+        if (error) return callback({ code: '1001' }, null);
         // if user not exists
         else if (!user) {
-            return callback({ msg: error, code: '2003' }, null);
+            return callback({ code: '2003' }, null);
         }
-        
+
         // if profile is private
         // else if (!user.profile_visibility) {
-        //     return callback({ msg: "Profile is private.", code: '2005' }, null);
+        //     return callback({ msg: "PRIVATE-PROFILE", code: '2005' }, null);
         // }
 
         // if username exists
         else {
             return callback(null, { success: true, user: user });
         }
-    })
+    });
+}
+
+add_friend = function (target_user_id, source_user_id, callback) {
+
+    // query to check if the user is already friend
+    let query1 = { _id: target_user_id, 'friends.user.id': source_user_id };
+
+    // check if user already friend
+    User.countDocuments(query1, (error, count1) => {
+
+        // if error
+        if (error) return callback({ code: '1001' }, null);
+
+        // no friends
+        else if (count1 == 0) {
+            // query to check if the user is already friend
+            let query2 = { _id: target_user_id, 'friend_requests.user.id': source_user_id };
+
+            // check if user reqest already sent
+            User.countDocuments(query2, (error, count2) => {
+
+                // if error
+                if (error) return callback({ code: '1001' }, null);
+                // send friend request
+                else if (count2 == 0) {
+                    User.updateOne(
+                        { _id: target_user_id }, // condition
+                        {
+                            '$push': {
+                                friend_requests: {
+                                    "user": {
+                                        "id": source_user_id
+                                    }
+                                }
+                            }
+                        }, (error, result) => {
+                            console.log(error, result)
+                            if (error) return callback({ code: '1001' }, null);
+                            else if (result.n) return callback(null, { success: true });
+                            else return callback({ code: 2003 }, null);
+                        }
+                    );
+                }
+                // the request already sent
+                else {
+                    return callback({ code: '2008' }, null);
+                }
+            });
+        }
+        // the user is already friend
+        else {
+            return callback({ code: '2007' }, null);
+        }
+    });
+}
+
+accept_friend_request = function (target_user_id, source_user_id, callback) {
+
+    // query to check if the user is already friend
+    let query = { _id: source_user_id, 'friend_requests.user.id': target_user_id };
+
+    // check if user already friend
+    User.countDocuments(query, (error, count) => {
+
+        // if error
+        console.log(error);
+        if (error) return callback({ code: '1001' }, null);
+
+        // no friends
+        else if (count > 0) {
+            // pull friend from friends_requests field
+            User.updateOne(
+                { _id: source_user_id }, // condition
+                {
+                    '$pull': {
+                        friend_requests: {
+                            "user": {
+                                "id": target_user_id
+                            }
+                        }
+                    },
+                }, (error, result_pull) => {
+                    if (error) return callback({ code: '1001' }, null);
+                    else if (result_pull.n > 0) {
+
+                        // push friend to friends field - for source user
+                        User.updateOne(
+                            { _id: source_user_id }, // condition
+                            {
+                                '$push': {
+                                    friends: {
+                                        "user": {
+                                            "id": target_user_id
+                                        }
+                                    }
+                                }
+                            }, (error, result_push_source) => {
+                                if (error) return callback({ code: '1001' }, null);
+                                else {
+                                    // push friend to friends field - for source user
+                                    User.updateOne(
+                                        { _id: target_user_id }, // condition
+                                        {
+                                            '$push': {
+                                                friends: {
+                                                    "user": {
+                                                        "id": source_user_id
+                                                    }
+                                                }
+                                            }
+                                        }, (error, result_push_target) => {
+                                            if (error) return callback({ code: '1001' }, null);
+                                            else return callback(null, { success: true });
+                                        }
+                                    );
+                                }
+                            }
+                        );
+                    }
+                    else {
+                        return callback({ code: '2009' }, null);
+                    }
+                }
+            );
+        }
+        // no such request
+        else {
+            return callback({ code: '2009' }, null);
+        }
+    });
 }
 
 register = function (user, callback) {
     // check if email exists
     User.countDocuments({ email: user.email }, (error_email, email_count) => {
         // if error
-        if (error_email) return callback({ msg: error_email, code: '1001_1' }, null);
+        if (error_email) return callback({ code: '1001_1' }, null);
         // if email exists
         if (email_count == 0) {
             // check if username exists
             User.countDocuments({ username: user.username }, (error_username, username_count) => {
                 // if error
-                if (error_username) return callback({ msg: error_username, code: '1001_2' }, null);
+                if (error_username) return callback({ code: '1001_2' }, null);
                 // if username exists
                 if (username_count == 0) {
                     try {
@@ -84,7 +213,7 @@ register = function (user, callback) {
                                 });
                             });
                     } catch (error) {
-                        return callback({ msg: error, code: '1001_3' }, null);
+                        return callback({ code: '1001_3' }, null);
                     }
                 } else {
                     // username already exists
@@ -104,7 +233,7 @@ login = function (user, callback) {
     // check if user exists
     User.findOne(query, (error, existing_user) => {
         // if error
-        if (error) return callback( { msg: error, code: 1001 }, null);
+        if (error) return callback({ code: 1001 }, null);
         // if user exists
         if (existing_user) {
             // compare password
@@ -136,6 +265,10 @@ check_token_key = function (authorization_header, callback) {
     });
 }
 
+
+
+// broken methods
+
 forget_password = function (email, callback) {
     const new_password = randomstring.generate({
         length: 6,
@@ -146,10 +279,10 @@ forget_password = function (email, callback) {
         { email: email },
         { password: get_hash(new_password + keys.encryption.salt_for_password) },
         (err, raw) => {
-            if (err) return callback({ success: false, msg: err.msg }, null)
-            if (!raw.ok) return callback({ success: false, msg: 700 }, null)
+            if (err) return callback({ success: false }, null)
+            if (!raw.ok) return callback({ success: false, code: 700 }, null)
             if (raw.n == 0) {
-                return callback(null, { success: false, msg: 300 })
+                return callback(null, { success: false, code: 300 })
             } else if (raw.nModified > 0) {
 
                 var transporter = nodemailer.createTransport({
@@ -169,7 +302,7 @@ forget_password = function (email, callback) {
 
                 transporter.sendMail(mailOptions, function (err, result) {
                     if (err) {
-                        return callback({ success: false, msg: err.msg }, null)
+                        return callback({ success: false }, null)
                     } else {
                         return callback(null, { success: true })
                     }
@@ -178,7 +311,7 @@ forget_password = function (email, callback) {
             } else {
                 return callback(null, {
                     success: false,
-                    msg: 500
+                    code: 500
                 })
             }
         }
@@ -190,18 +323,20 @@ change_passsword = function (user_id, old_password, new_password, callback) {
         { _id: user_id, password: get_hash(old_password + salt_for_password) },
         { password: get_hash(new_password + salt_for_password) },
         (err, raw) => {
-            if (err) return callback({ success: false, msg: err.msg }, null)
-            if (!raw.ok) return callback({ success: false, msg: 700 }, null)
+            if (err) return callback({ success: false, code: 1001 }, null)
+            if (!raw.ok) return callback({ success: false, code: 700 }, null)
             if (raw.n == 0) {
-                return callback(null, { success: false, msg: 300 })
+                return callback(null, { success: false, code: 300 })
             } else if (raw.nModified > 0) {
                 return callback(null, { success: true })
             } else {
-                return callback(null, { success: false, msg: 700 })
+                return callback(null, { success: false, code: 700 })
             }
         }
     )
 }
+
+//
 
 compare_password = function (password, hash) {
     if (password === hash)
@@ -235,5 +370,7 @@ module.exports = {
     forget_password: forget_password,
     change_passsword: change_passsword,
     check_token_key: check_token_key,
-    get_profile: get_profile
+    get_profile: get_profile,
+    add_friend: add_friend,
+    accept_friend_request: accept_friend_request
 }

@@ -53,19 +53,26 @@ const UserSchema = mongoose.Schema({
     inbox: [
         {
             from: {
-                user_id: {
-                    type: mongoose.Schema.Types.ObjectId,
-                    required: true,
+                user: {
+                    id: {
+                        type: mongoose.Schema.Types.ObjectId,
+                        required: true,
+                    }
                 }
             },
             message: {
                 type: String,
                 required: false
+            },
+            received_at: {
+                type: Date,
+                required: true
             }
         }
     ],
     "friends": [
         {
+            _id: false,
             user: {
                 id: {
                     type: mongoose.Schema.Types.ObjectId,
@@ -76,6 +83,7 @@ const UserSchema = mongoose.Schema({
     ],
     "friend_requests": [
         {
+            _id: false,
             user: {
                 id: {
                     type: mongoose.Schema.Types.ObjectId,

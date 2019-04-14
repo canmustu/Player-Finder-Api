@@ -59,8 +59,7 @@ router.get('/get_conversation/:user_id', passport.authenticate('jwt', { session:
         // source user id from token key
         let source_user_id = req.user.id;
 
-        if(target_user_id && source_user_id) {
-
+        if (target_user_id && source_user_id) {
             UserRepository.get_conversation(target_user_id, source_user_id, (error, result) => {
                 if (error) return res.json({ success: false, error: error });
                 else {
@@ -70,7 +69,50 @@ router.get('/get_conversation/:user_id', passport.authenticate('jwt', { session:
                     });
                 }
             });
+        } else {
+            return res.json({ success: false, error: { code: 2006 } });
+        }
+    });
+});
 
+// add friend
+router.post('/add_friend', passport.authenticate('jwt', { session: false }), (req, res) => {
+    AuthenticationService.access_control(req, res, { router_path: router.path }, () => {
+        // target user id from body
+        let target_user_id = req.body.user_id;
+        // source user id from token key
+        let source_user_id = req.user.id;
+
+        if (target_user_id && source_user_id) {
+
+            UserRepository.add_friend(target_user_id, source_user_id, (error, result) => {
+                if (error) return res.json({ success: false, error: error });
+                else res.json(result);
+            });
+
+        } else {
+            return res.json({ success: false, error: { code: 2006 } });
+        }
+    });
+});
+
+// accept friend request
+router.post('/accept_friend_request', passport.authenticate('jwt', { session: false }), (req, res) => {
+    AuthenticationService.access_control(req, res, { router_path: router.path }, () => {
+        // target user id from body
+        let target_user_id = req.body.user_id;
+        // source user id from token key
+        let source_user_id = req.user.id;
+
+        if (target_user_id && source_user_id) {
+
+            UserRepository.accept_friend_request(target_user_id, source_user_id, (error, result) => {
+                if (error) return res.json({ success: false, error: error });
+                else res.json(result);
+            });
+
+        } else {
+            return res.json({ success: false, error: { code: 2006 } });
         }
     });
 });
