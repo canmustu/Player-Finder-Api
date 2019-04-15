@@ -66,7 +66,7 @@ passport.use(new GoogleStrategy({
                 avatar: email.photos[0].value,
                 "google.id": email.id
             });
-            user.username = "GUEST" + user._id;
+            user.username = "ISIMSIZ_" + user._id;
 
             // avatar of google size changed
             user.avatar = user.avatar.replace("sz=50", "sz=200");
@@ -116,7 +116,7 @@ passport.use(new FacebookStrategy({
                 "facebook.id": profile.id,
                 "facebook.url": profile.profileUrl,
             });
-            user.username = "GUEST" + user._id;
+            user.username = "ISIMSIZ_" + user._id;
 
             user
                 .save()

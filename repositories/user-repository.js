@@ -528,42 +528,49 @@ check_token_key = function (authorization_header, callback) {
 
 login_with_google = function (user, callback) {
 
-    User.findOne({ "google.id": user.google_id }).then(existing_user => {
+    User.findOne({ google: { id: user.google.id } }, (error, found_user) => {
+
         let returning_user = {};
 
-        if (existing_user) {
+        if (error) return callback({ code: 1001 }, null);
+        else if (found_user) {
 
             // set returning_user for token key
-            returning_user = set_user_for_token_key(existing_user);
+            returning_user = set_user_for_token_key(found_user);
 
-            // return login info
-            returning_user.success_type = "login";
-
-            return done(null, returning_user);
+            return callback(null, {
+                success: true,
+                user: set_user_for_token_key(returning_user),
+                token_key: TokenKeyService.create_token_key({ user: set_user_for_token_key(returning_user) })
+            });
 
         } else {
-            const user = new User({
+            const new_user = new User({
                 fullname: user.fullname,
                 email: user.email,
                 avatar: user.avatar,
-                "google.id": user.google_id
+                google: {
+                    id: user.google.id
+                }
             });
-            user.username = "ISIMSIZ_" + user._id;
+
+            new_user.username = "ISIMSIZ_" + new_user._id;
 
             // avatar of google size changed
-            user.avatar = user.avatar.replace("sz=50", "sz=200");
+            if (new_user.avatar) new_user.avatar = new_user.avatar.replace("sz=50", "sz=200");
 
-            user
+            new_user
                 .save()
-                .then(new_user => {
+                .then(usr => {
 
                     // set returning_user for token key
-                    returning_user = set_user_for_token_key(new_user);
+                    returning_user = set_user_for_token_key(usr);
 
-                    // return register info
-                    returning_user.success_type = "register";
-
-                    return done(null, returning_user);
+                    return callback(null, {
+                        success: true,
+                        user: set_user_for_token_key(returning_user),
+                        token_key: TokenKeyService.create_token_key({ user: set_user_for_token_key(returning_user) })
+                    });
                 });
         }
     });
@@ -571,40 +578,62 @@ login_with_google = function (user, callback) {
 
 login_with_facebook = function (user, callback) {
 
-    User.findOne({ "facebook.id": user.facebook_id }).then(existing_user => {
+    User.findOne({ facebook: { id: user.facebook.id } }, (error, existing_user) => {
+
         let returning_user = {};
 
-        if (existing_user) {
+        if (error) return callback({ code: 1001 }, null);
+
+        // login
+        else if (existing_user) {
 
             // set returning_user for token key
             returning_user = set_user_for_token_key(existing_user);
 
-            // return login info
-            returning_user.success_type = "login";
-
-            return cb(null, returning_user);
-
-        } else {
-            const user = new User({
-                fullname: user.fullname,
-                email: user.email,
-                avatar: user.avatar,
-                "facebook.id": user.facebook_id,
+            return callback(null, {
+                success: true,
+                user: set_user_for_token_key(returning_user),
+                token_key: TokenKeyService.create_token_key({ user: set_user_for_token_key(returning_user) })
             });
-            user.username = "ISIMSIZ_" + user._id;
 
-            user
-                .save()
-                .then(new_user => {
+        }
 
-                    // set returning_user for token key
-                    returning_user = set_user_for_token_key(new_user);
+        // register
+        else {
+            User.findOne({ email: user.email }, (error, found_user) => {
+                if (error) return callback({ code: 1001 }, null);
+                // email not exist , then register
+                else if (!found_user) {
 
-                    // return register info
-                    returning_user.success_type = "register";
+                    const new_user = new User({
+                        fullname: user.fullname,
+                        email: user.email,
+                        facebook: {
+                            id: user.facebook.id
+                        }
+                    });
 
-                    return cb(null, returning_user);
-                });
+                    new_user.username = "ISIMSIZ_" + new_user._id;
+
+                    new_user
+                        .save()
+                        .then(usr => {
+
+                            // set returning_user for token key
+                            returning_user = set_user_for_token_key(usr);
+
+                            return callback(null, {
+                                success: true,
+                                user: set_user_for_token_key(returning_user),
+                                token_key: TokenKeyService.create_token_key({ user: set_user_for_token_key(returning_user) })
+                            });
+                        });
+                }
+                // email exists , not register
+                else return callback({ code: 2002 }, null);
+            });
+
+
         }
     });
 }
@@ -722,5 +751,6 @@ module.exports = {
     ignore_friend_request: ignore_friend_request,
     cancel_friend_request: cancel_friend_request,
     remove_friend: remove_friend,
-    login_with_google: login_with_google
+    login_with_google: login_with_google,
+    login_with_facebook: login_with_facebook
 }

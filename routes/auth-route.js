@@ -66,6 +66,7 @@ router.post('/register', (req, res) => {
 
 // register or login , facebook oauth2 for MOBILE
 router.post('/login_with_facebook', (req, res) => {
+
     let user = new User({
         email: req.body.email,
         fullname: req.body.fullname,
@@ -75,7 +76,7 @@ router.post('/login_with_facebook', (req, res) => {
     });
 
     if (user.email && user.facebook.id) {
-        UserRepository.register(user, (error, result) => {
+        UserRepository.login_with_facebook(user, (error, result) => {
             if (error) return res.json({ success: false, error: error });
             else return res.json(result);
         });
@@ -97,7 +98,7 @@ router.post('/login_with_google', (req, res) => {
     });
 
     if (user.email && user.google.id) {
-        UserRepository.register(user, (error, result) => {
+        UserRepository.login_with_google(user, (error, result) => {
             if (error) return res.json({ success: false, error: error });
             else return res.json(result);
         });
