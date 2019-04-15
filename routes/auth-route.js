@@ -62,6 +62,53 @@ router.post('/register', (req, res) => {
     }
 });
 
+// START MOBILE SPECIFIC ROUTES
+
+// register or login , facebook oauth2 for MOBILE
+router.post('/login_with_facebook', (req, res) => {
+    let user = new User({
+        email: req.body.email,
+        fullname: req.body.fullname,
+        facebook: {
+            id: req.body.facebook_id
+        }
+    });
+
+    if (user.email && user.facebook.id) {
+        UserRepository.register(user, (error, result) => {
+            if (error) return res.json({ success: false, error: error });
+            else return res.json(result);
+        });
+    }
+    else {
+        return res.json({ success: false, error: { code: 2006 } });
+    }
+});
+
+// register or login , google oauth2 for MOBILE
+router.post('/login_with_google', (req, res) => {
+    let user = new User({
+        email: req.body.email,
+        fullname: req.body.fullname,
+        avatar: req.body.avatar,
+        google: {
+            id: req.body.google_id
+        }
+    });
+
+    if (user.email && user.google.id) {
+        UserRepository.register(user, (error, result) => {
+            if (error) return res.json({ success: false, error: error });
+            else return res.json(result);
+        });
+    }
+    else {
+        return res.json({ success: false, error: { code: 2006 } });
+    }
+});
+
+// END MOBILE SPECIFIC ROUTES
+
 // verify token key
 router.get('/verify_token_key', passport.authenticate('jwt', { session: false }), (req, res) => {
     UserRepository.check_token_key(req.get('Authorization'), (error, decoded) => {

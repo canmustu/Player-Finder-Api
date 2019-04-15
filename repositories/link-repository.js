@@ -8,5 +8,4 @@ const jwt = require('jsonwebtoken');
 const Link = require('../models/link-model');
 
 module.exports = {
-    Link: Link,
 }

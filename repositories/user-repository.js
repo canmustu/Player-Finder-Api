@@ -524,7 +524,90 @@ check_token_key = function (authorization_header, callback) {
 
 //
 
+// MOBILE SPECIFIC FUNCTIONS
 
+login_with_google = function (user, callback) {
+
+    User.findOne({ "google.id": user.google_id }).then(existing_user => {
+        let returning_user = {};
+
+        if (existing_user) {
+
+            // set returning_user for token key
+            returning_user = set_user_for_token_key(existing_user);
+
+            // return login info
+            returning_user.success_type = "login";
+
+            return done(null, returning_user);
+
+        } else {
+            const user = new User({
+                fullname: user.fullname,
+                email: user.email,
+                avatar: user.avatar,
+                "google.id": user.google_id
+            });
+            user.username = "ISIMSIZ_" + user._id;
+
+            // avatar of google size changed
+            user.avatar = user.avatar.replace("sz=50", "sz=200");
+
+            user
+                .save()
+                .then(new_user => {
+
+                    // set returning_user for token key
+                    returning_user = set_user_for_token_key(new_user);
+
+                    // return register info
+                    returning_user.success_type = "register";
+
+                    return done(null, returning_user);
+                });
+        }
+    });
+}
+
+login_with_facebook = function (user, callback) {
+
+    User.findOne({ "facebook.id": user.facebook_id }).then(existing_user => {
+        let returning_user = {};
+
+        if (existing_user) {
+
+            // set returning_user for token key
+            returning_user = set_user_for_token_key(existing_user);
+
+            // return login info
+            returning_user.success_type = "login";
+
+            return cb(null, returning_user);
+
+        } else {
+            const user = new User({
+                fullname: user.fullname,
+                email: user.email,
+                avatar: user.avatar,
+                "facebook.id": user.facebook_id,
+            });
+            user.username = "ISIMSIZ_" + user._id;
+
+            user
+                .save()
+                .then(new_user => {
+
+                    // set returning_user for token key
+                    returning_user = set_user_for_token_key(new_user);
+
+                    // return register info
+                    returning_user.success_type = "register";
+
+                    return cb(null, returning_user);
+                });
+        }
+    });
+}
 
 // broken methods
 
@@ -638,5 +721,6 @@ module.exports = {
     is_friend_request: is_friend_request,
     ignore_friend_request: ignore_friend_request,
     cancel_friend_request: cancel_friend_request,
-    remove_friend: remove_friend
+    remove_friend: remove_friend,
+    login_with_google: login_with_google
 }

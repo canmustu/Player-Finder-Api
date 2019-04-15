@@ -51,7 +51,7 @@ passport.use(new GoogleStrategy({
         if (existing_user) {
 
             // set returning_user for token key
-            returning_user = UserRepository.UserRepository.set_user_for_token_key(existing_user);
+            returning_user = UserRepository.set_user_for_token_key(existing_user);
 
             // return login info
             returning_user.success_type = "login";
