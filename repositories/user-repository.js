@@ -61,7 +61,8 @@ add_friend = function (target_user_id, source_user_id, callback) {
     // if same user
     if (target_user_id == source_user_id) {
         return callback({ code: '2010' }, null);
-    } else {
+    }
+    else {
 
         // query to check if the user is already friend
         let query1 = { _id: target_user_id, 'friends.user.id': source_user_id };
@@ -74,7 +75,7 @@ add_friend = function (target_user_id, source_user_id, callback) {
 
             // no friends
             else if (count1 == 0) {
-                // query to check if the user is already friend
+                // query to check if user reqest already sent
                 let query2 = { _id: target_user_id, 'friend_requests.user.id': source_user_id };
 
                 // check if user reqest already sent
