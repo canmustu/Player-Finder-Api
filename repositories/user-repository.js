@@ -329,13 +329,7 @@ is_friend_request = function (target_user_id, source_user_id, callback) {
     // check if username exists
     User.countDocuments(query, (error, count) => {
         if (error) return callback({ code: '1001' }, null);
-        // if user not exists
-        else if (count > 0) {
-            return callback(null, { success: true, is_friend_request: true });
-        }
-        else {
-            return callback(null, { success: true, is_friend_request: false });
-        }
+        else return callback(null, { success: count > 0 });
     });
 }
 
@@ -430,13 +424,7 @@ is_friend = function (target_user_id, source_user_id, callback) {
     // check if username exists
     User.countDocuments(query, (error, count) => {
         if (error) return callback({ code: '1001' }, null);
-        // if user not exists
-        else if (count > 0) {
-            return callback(null, { success: true, is_friend: true });
-        }
-        else {
-            return callback(null, { success: true, is_friend: false });
-        }
+        else return callback(null, { success: count > 0 });
     });
 }
 
