@@ -3,8 +3,8 @@ const randomstring = require('randomstring');
 const nodemailer = require('nodemailer');
 const keys = require('../config/keys');
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const encryption = require('../utilization/encryption');
-
 const User = require('../models/user-model');
 const TokenKeyService = require('../services/token-key-service');
 
@@ -58,67 +58,74 @@ get_profile = function (user_id, callback) {
 
 add_friend = function (target_user_id, source_user_id, callback) {
 
-    // query to check if the user is already friend
-    let query1 = { _id: target_user_id, 'friends.user.id': source_user_id };
+    // if same user
+    if (target_user_id == source_user_id) {
+        return callback({ code: '2010' }, null);
+    } else {
 
-    // check if user already friend
-    User.countDocuments(query1, (error, count1) => {
+        // query to check if the user is already friend
+        let query1 = { _id: target_user_id, 'friends.user.id': source_user_id };
 
-        // if error
-        if (error) return callback({ code: '1001' }, null);
+        // check if user already friend
+        User.countDocuments(query1, (error, count1) => {
 
-        // no friends
-        else if (count1 == 0) {
-            // query to check if the user is already friend
-            let query2 = { _id: target_user_id, 'friend_requests.user.id': source_user_id };
+            // if error
+            if (error) return callback({ code: '1001' }, null);
 
-            // check if user reqest already sent
-            User.countDocuments(query2, (error, count2) => {
+            // no friends
+            else if (count1 == 0) {
+                // query to check if the user is already friend
+                let query2 = { _id: target_user_id, 'friend_requests.user.id': source_user_id };
 
-                // if error
-                if (error) return callback({ code: '1001' }, null);
-                // send friend request
-                else if (count2 == 0) {
-                    User.updateOne(
-                        { _id: target_user_id }, // condition
-                        {
-                            '$push': {
-                                friend_requests: {
-                                    "user": {
-                                        "id": source_user_id
+                // check if user reqest already sent
+                User.countDocuments(query2, (error, count2) => {
+
+                    // if error
+                    if (error) return callback({ code: '1001' }, null);
+                    // send friend request
+                    else if (count2 == 0) {
+                        User.updateOne(
+                            { _id: target_user_id }, // condition
+                            {
+                                $push: {
+                                    friend_requests: {
+                                        user: {
+                                            id: source_user_id,
+                                            requested_at: new Date()
+                                        }
                                     }
                                 }
+                            }, (error, result) => {
+                                if (error) return callback({ code: '1001' }, null);
+                                else if (result.n) return callback(null, { success: true });
+                                else return callback({ code: 2003 }, null);
                             }
-                        }, (error, result) => {
-                            if (error) return callback({ code: '1001' }, null);
-                            else if (result.n) return callback(null, { success: true });
-                            else return callback({ code: 2003 }, null);
-                        }
-                    );
-                }
-                // the request already sent
-                else {
-                    return callback({ code: '2008' }, null);
-                }
-            });
-        }
-        // the user is already friend
-        else {
-            return callback({ code: '2007' }, null);
-        }
-    });
+                        );
+                    }
+                    // the request already sent
+                    else {
+                        return callback({ code: '2008' }, null);
+                    }
+                });
+            }
+            // the user is already friend
+            else {
+                return callback({ code: '2007' }, null);
+            }
+        });
+    }
 }
 
 accept_friend_request = function (target_user_id, source_user_id, callback) {
 
-    // query to check if the user is already friend
+    // query to check if request exists
     let query = { _id: source_user_id, 'friend_requests.user.id': target_user_id };
 
-    // check if user already friend
+    // check if request exists
     User.countDocuments(query, (error, count) => {
         if (error) return callback({ code: '1001' }, null);
 
-        // no friends then add
+        // if request exists
         else if (count > 0) {
             // pull friend from friends_requests field
             User.updateOne(
@@ -126,9 +133,7 @@ accept_friend_request = function (target_user_id, source_user_id, callback) {
                 {
                     '$pull': {
                         friend_requests: {
-                            "user": {
-                                "id": target_user_id
-                            }
+                            "user.id": target_user_id
                         }
                     },
                 }, (error, result_pull) => {
@@ -182,11 +187,163 @@ accept_friend_request = function (target_user_id, source_user_id, callback) {
     });
 }
 
+ignore_friend_request = function (target_user_id, source_user_id, callback) {
+
+    // query to check if request exists
+    let query = { _id: source_user_id, 'friend_requests.user.id': target_user_id };
+
+    // check if request exists
+    User.countDocuments(query, (error, count) => {
+        if (error) return callback({ code: '1001' }, null);
+
+        // friend request exists
+        else if (count > 0) {
+            // pull friend from friends_requests field
+            User.updateOne(
+                { _id: source_user_id }, // condition
+                {
+                    '$pull': {
+                        friend_requests: {
+                            "user.id": target_user_id
+                        }
+                    },
+                }, (error, result) => {
+                    if (error) return callback({ code: '1001' }, null);
+                    else if (result.n > 0) {
+                        if (error) return callback({ code: '1001' }, null);
+                        else return callback(null, { success: true });
+                    }
+                    else {
+                        return callback({ code: '2009' }, null);
+                    }
+                }
+            );
+        }
+        // no such request
+        else {
+            return callback({ code: '2009' }, null);
+        }
+    });
+}
+
+cancel_friend_request = function (target_user_id, source_user_id, callback) {
+
+    // query to check if request exists
+    let query = { _id: target_user_id, 'friend_requests.user.id': source_user_id };
+
+    // check if request exists
+    User.countDocuments(query, (error, count) => {
+        if (error) return callback({ code: '1001' }, null);
+
+        // friend request exists
+        else if (count > 0) {
+            // pull friend from friends_requests field
+            User.updateOne(
+                { _id: target_user_id }, // condition
+                {
+                    '$pull': {
+                        friend_requests: {
+                            "user.id": source_user_id
+                        }
+                    },
+                }, (error, result) => {
+                    if (error) return callback({ code: '1001' }, null);
+                    else if (result.n > 0) {
+                        if (error) return callback({ code: '1001' }, null);
+                        else return callback(null, { success: true });
+                    }
+                    else {
+                        return callback({ code: '2009' }, null);
+                    }
+                }
+            );
+        }
+        // no such request
+        else {
+            return callback({ code: '2009' }, null);
+        }
+    });
+}
+
+get_friend_requests = function (user_id, callback) {
+
+    let query = [
+        {
+            $match: { _id: mongoose.Types.ObjectId(user_id) }
+        },
+        {
+            $group: {
+                _id: null,
+                friend_requests: { $push: "$friend_requests.user.id" }
+            }
+        }
+    ];
+
+    // getting friend requests of user
+    User.aggregate(query, (error, result) => {
+        // array to object cast
+        result = result[0];
+
+        if (error) return callback({ code: '1001' }, null);
+        else if (result) {
+            // getting friend_requests_ids from result
+            let friend_request_ids = result.friend_requests[0]; // this is array
+
+            // if friend request exist
+            if (friend_request_ids.length) {
+                query = [
+                    {
+                        _id: {
+                            '$in': friend_request_ids
+                        }
+                    },
+                    {
+                        _id: 1,
+                        username: 1,
+                        avatar: 1
+                    }
+                ];
+
+                User.find(...query, (error, users) => {
+                    if (error) return callback({ code: '1001' }, null);
+                    else return callback(null, { success: true, friend_requests: users });
+                });
+            }
+            // if zero friend request
+            else {
+                return callback(null, { success: true, friend_requests: [] });
+            }
+        }
+        // no user
+        else return callback({ code: '2003' }, null);
+    });
+}
+
+is_friend_request = function (target_user_id, source_user_id, callback) {
+
+    let query = {
+        _id: source_user_id,
+        'friend_requests.user.id': target_user_id
+    };
+
+    // check if username exists
+    User.countDocuments(query, (error, count) => {
+        if (error) return callback({ code: '1001' }, null);
+        // if user not exists
+        else if (count > 0) {
+            return callback(null, { success: true, is_friend_request: true });
+        }
+        else {
+            return callback(null, { success: true, is_friend_request: false });
+        }
+    });
+}
+
 get_friends = function (user_id, callback) {
 
     let query = [
         {
-            $match: { _id: user_id }
+            $match: { _id: mongoose.Types.ObjectId(user_id) }
         },
         {
             $group: {
@@ -196,57 +353,90 @@ get_friends = function (user_id, callback) {
         }
     ];
 
-    console.log(query);
-
     // getting friends of user
     User.aggregate(query, (error, result) => {
-        console.log(result)
+        // array to object cast
+        result = result[0];
 
         if (error) return callback({ code: '1001' }, null);
         else if (result) {
-            let friend_ids = result.friends;
-            if (friend_ids) {
+            // getting friend_ids from result
+            let friend_ids = result.friends[0]; // this is array
 
+            // if friend exist
+            if (friend_ids.length) {
+                query = [{ _id: { '$in': friend_ids } }, { _id: 1, username: 1, avatar: 1 }];
+                User.find(...query, (error, users) => {
+                    if (error) return callback({ code: '1001' }, null);
+                    else return callback(null, { success: true, friends: users });
+                });
             }
-            let query = { _id: { '$in': [] } };
-            User.find()
-            return callback(null, { success: true });
+            // if zero friend
+            else {
+                return callback(null, { success: true, friends: [] });
+            }
         }
         // no user
         else return callback({ code: '2003' }, null);
     });
 }
 
-//broken method
-get_friend_requests = function (user_id, callback) {
+remove_friend = function (target_user_id, source_user_id, callback) {
 
-    let query = [
-        {
-            $match: { _id: user_id }
-        },
-        {
-            $group: {
-                _id: null,
-                friends: { $push: "$friend_requests.user.id" }
-            }
-        }
-    ];
+    // query to check if user exists
+    let query = { _id: source_user_id, 'friends.user.id': target_user_id };
 
-    // getting friend_requests of user
-    User.aggregate(query, (error, result) => {
-
+    // check if user exists
+    User.countDocuments(query, (error, count) => {
         if (error) return callback({ code: '1001' }, null);
-        else if (result) {
-            let friend_ids = result.friends;
-            if (friend_ids) {
 
-            }
-            let query = { _id: { '$in': [] } };
-            User.find()
-            return callback(null, { success: true });
+        // friend exists
+        else if (count > 0) {
+            // pull user from friends field
+            User.updateOne(
+                { _id: source_user_id }, // condition
+                {
+                    '$pull': {
+                        friends: {
+                            "user.id": target_user_id
+                        }
+                    },
+                }, (error, result) => {
+                    if (error) return callback({ code: '1001' }, null);
+                    else if (result.n > 0) {
+                        if (error) return callback({ code: '1001' }, null);
+                        else return callback(null, { success: true });
+                    }
+                    else {
+                        return callback({ code: '2009' }, null);
+                    }
+                }
+            );
         }
-        // no user
-        else return callback({ code: '2003' }, null);
+        // no such request
+        else {
+            return callback({ code: '2009' }, null);
+        }
+    });
+}
+
+is_friend = function (target_user_id, source_user_id, callback) {
+
+    let query = {
+        _id: source_user_id,
+        'friends.user.id': { $in: [target_user_id] }
+    };
+
+    // check if username exists
+    User.countDocuments(query, (error, count) => {
+        if (error) return callback({ code: '1001' }, null);
+        // if user not exists
+        else if (count > 0) {
+            return callback(null, { success: true, is_friend: true });
+        }
+        else {
+            return callback(null, { success: true, is_friend: false });
+        }
     });
 }
 
@@ -442,5 +632,11 @@ module.exports = {
     get_profile: get_profile,
     add_friend: add_friend,
     accept_friend_request: accept_friend_request,
-    get_friends: get_friends
+    get_friends: get_friends,
+    get_friend_requests: get_friend_requests,
+    is_friend: is_friend,
+    is_friend_request: is_friend_request,
+    ignore_friend_request: ignore_friend_request,
+    cancel_friend_request: cancel_friend_request,
+    remove_friend: remove_friend
 }
