@@ -58,6 +58,8 @@ get_profile = function (user_id, callback) {
 
 add_friend = function (target_user_id, source_user_id, callback) {
 
+    let query;
+
     // if same user
     if (target_user_id == source_user_id) {
         return callback({ code: '2010' }, null);
@@ -65,43 +67,61 @@ add_friend = function (target_user_id, source_user_id, callback) {
     else {
 
         // query to check if the user is already friend
-        let query1 = { _id: target_user_id, 'friends.user.id': source_user_id };
+        query = { _id: target_user_id, 'friends.user.id': source_user_id };
 
         // check if user already friend
-        User.countDocuments(query1, (error, count1) => {
+        User.countDocuments(query, (error, count1) => {
 
             // if error
             if (error) return callback({ code: '1001' }, null);
 
             // no friends
             else if (count1 == 0) {
-                // query to check if user reqest already sent
-                let query2 = { _id: target_user_id, 'friend_requests.user.id': source_user_id };
+                // query to check if user request already sent
+                query = { _id: target_user_id, 'friend_requests.user.id': source_user_id };
 
-                // check if user reqest already sent
-                User.countDocuments(query2, (error, count2) => {
+                // check if user request already sent
+                User.countDocuments(query, (error, count2) => {
 
                     // if error
                     if (error) return callback({ code: '1001' }, null);
-                    // send friend request
+                    // if not sent before , send friend request
                     else if (count2 == 0) {
-                        User.updateOne(
-                            { _id: target_user_id }, // condition
-                            {
-                                $push: {
-                                    friend_requests: {
-                                        user: {
-                                            id: source_user_id,
-                                            requested_at: new Date()
+
+                        // query to check if user reqest already sent
+                        query = { _id: source_user_id, 'friend_requests.user.id': target_user_id };
+
+                        // check if user reqest already sent
+                        User.countDocuments(query, (error, count3) => {
+
+                            // if error
+                            if (error) return callback({ code: '1001' }, null);
+                            // no request received
+                            else if (count3 == 0) {
+                                User.updateOne(
+                                    { _id: target_user_id }, // condition
+                                    {
+                                        $push: {
+                                            friend_requests: {
+                                                user: {
+                                                    id: source_user_id,
+                                                    requested_at: new Date()
+                                                }
+                                            }
                                         }
+                                    }, (error, result) => {
+                                        if (error) return callback({ code: '1001' }, null);
+                                        else if (result.n) return callback(null, { success: true });
+                                        else return callback({ code: 2003 }, null);
                                     }
-                                }
-                            }, (error, result) => {
-                                if (error) return callback({ code: '1001' }, null);
-                                else if (result.n) return callback(null, { success: true });
-                                else return callback({ code: 2003 }, null);
+                                );
                             }
-                        );
+                            // the request already received
+                            else {
+                                // pull friend request and push to friends
+                                accept_friend_request(target_user_id, source_user_id, callback);
+                            }
+                        });
                     }
                     // the request already sent
                     else {
@@ -123,8 +143,8 @@ accept_friend_request = function (target_user_id, source_user_id, callback) {
     let query = { _id: source_user_id, 'friend_requests.user.id': target_user_id };
 
     // check if request exists
-    User.countDocuments(query, (error, count) => {
-        if (error) return callback({ code: '1001' }, null);
+    User.countDocuments(query, (error1, count) => {
+        if (error1) return callback({ code: '1001' }, null);
 
         // if request exists
         else if (count > 0) {
@@ -137,8 +157,8 @@ accept_friend_request = function (target_user_id, source_user_id, callback) {
                             "user.id": target_user_id
                         }
                     },
-                }, (error, result_pull) => {
-                    if (error) return callback({ code: '1001' }, null);
+                }, (error2, result_pull) => {
+                    if (error2) return callback({ code: '1001' }, null);
                     else if (result_pull.n > 0) {
 
                         // push friend to friends field - for source user
@@ -152,8 +172,8 @@ accept_friend_request = function (target_user_id, source_user_id, callback) {
                                         }
                                     }
                                 }
-                            }, (error, result_push_source) => {
-                                if (error) return callback({ code: '1001' }, null);
+                            }, (error3, result_push_source) => {
+                                if (error3) return callback({ code: '1001' }, null);
                                 else {
                                     // push friend to friends field - for source user
                                     User.updateOne(
@@ -166,8 +186,8 @@ accept_friend_request = function (target_user_id, source_user_id, callback) {
                                                     }
                                                 }
                                             }
-                                        }, (error, result_push_target) => {
-                                            if (error) return callback({ code: '1001' }, null);
+                                        }, (error4, result_push_target) => {
+                                            if (error4) return callback({ code: '1001' }, null);
                                             else return callback(null, { success: true });
                                         }
                                     );
@@ -210,13 +230,8 @@ ignore_friend_request = function (target_user_id, source_user_id, callback) {
                     },
                 }, (error, result) => {
                     if (error) return callback({ code: '1001' }, null);
-                    else if (result.n > 0) {
-                        if (error) return callback({ code: '1001' }, null);
-                        else return callback(null, { success: true });
-                    }
-                    else {
-                        return callback({ code: '2009' }, null);
-                    }
+                    else if (result.n > 0) return callback(null, { success: true });
+                    else return callback({ code: '2009' }, null);
                 }
             );
         }
@@ -249,10 +264,7 @@ cancel_friend_request = function (target_user_id, source_user_id, callback) {
                     },
                 }, (error, result) => {
                     if (error) return callback({ code: '1001' }, null);
-                    else if (result.n > 0) {
-                        if (error) return callback({ code: '1001' }, null);
-                        else return callback(null, { success: true });
-                    }
+                    else if (result.n > 0) return callback(null, { success: true });
                     else {
                         return callback({ code: '2009' }, null);
                     }
