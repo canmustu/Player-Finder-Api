@@ -592,15 +592,15 @@ login = function (user, callback) {
     })
 }
 
-check_token_key = function (authorization_header, callback) {
-    // Authorization header = "JWT {token_key}"
-    // first 4 characters will be deleted and be taken token key to decode
-    let token_key = authorization_header.substring(4);
+// check_token_key = function (authorization_header, callback) {
+//     // Authorization header = "JWT {token_key}"
+//     // first 4 characters will be deleted and be taken token key to decode
+//     let token_key = authorization_header.substring(4);
 
-    jwt.verify(token_key, keys.token_key.secret, (err, decoded) => {
-        return callback(err, decoded);
-    });
-}
+//     jwt.verify(token_key, keys.token_key.secret, (err, decoded) => {
+//         return callback(err, decoded);
+//     });
+// }
 
 //
 
@@ -608,13 +608,14 @@ check_token_key = function (authorization_header, callback) {
 
 login_with_google = function (user, callback) {
 
-    User.findOne({ google: { id: user.google.id } }, (error, found_user) => {
+    User.findOne({ "google.id": user.google.id }, (error, found_user) => {
 
         let returning_user = {};
 
         if (error) return callback({ code: 1001 }, null);
-        else if (found_user) {
 
+        // login
+        else if (found_user) {
             // set returning_user for token key
             returning_user = set_user_for_token_key(found_user);
 
@@ -623,8 +624,10 @@ login_with_google = function (user, callback) {
                 user: set_user_for_token_key(returning_user),
                 token_key: TokenKeyService.create_token_key({ user: set_user_for_token_key(returning_user) })
             });
+        }
 
-        } else {
+        // register
+        else {
             const new_user = new User({
                 fullname: user.fullname,
                 email: user.email,
@@ -658,7 +661,9 @@ login_with_google = function (user, callback) {
 
 login_with_facebook = function (user, callback) {
 
-    User.findOne({ facebook: { id: user.facebook.id } }, (error, existing_user) => {
+    User.findOne({ "facebook.id": user.facebook.id }, (error, existing_user) => {
+
+        console.log(existing_user);
 
         let returning_user = {};
 
@@ -688,8 +693,8 @@ login_with_facebook = function (user, callback) {
                     const new_user = new User({
                         fullname: user.fullname,
                         email: user.email,
-                        facebook: {
-                            id: user.facebook.id
+                        google: {
+                            id: user.google.id
                         }
                     });
 
@@ -712,9 +717,8 @@ login_with_facebook = function (user, callback) {
                 // email exists , not register
                 else return callback({ code: 2002 }, null);
             });
-
-
         }
+
     });
 }
 
@@ -820,7 +824,7 @@ module.exports = {
     login: login,
     forget_password: forget_password,
     change_passsword: change_passsword,
-    check_token_key: check_token_key,
+    // check_token_key: check_token_key,
     get_profile: get_profile,
     add_friend: add_friend,
     accept_friend_request: accept_friend_request,

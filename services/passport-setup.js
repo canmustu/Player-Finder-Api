@@ -108,6 +108,7 @@ passport.use(new FacebookStrategy({
             return cb(null, returning_user);
 
         } else {
+
             const user = new User({
                 fullname: profile.displayName,
                 gender: profile.gender == 'male' ? true : false,
@@ -116,6 +117,7 @@ passport.use(new FacebookStrategy({
                 "facebook.id": profile.id,
                 "facebook.url": profile.profileUrl,
             });
+
             user.username = "ISIMSIZ_" + user._id;
 
             user
@@ -135,40 +137,40 @@ passport.use(new FacebookStrategy({
 }));
 
 // steam
-passport.use(new SteamStrategy({
-    returnURL: 'http://localhost/auth/steam/callback',
-    realm: 'http://localhost/',
-    apiKey: keys.steam.apiKey
-}, (identifier, profile, done) => {
-    User.findOne({ "steam.id": profile.id }).then(existing_user => {
-        let returning_user = {};
+// passport.use(new SteamStrategy({
+//     returnURL: 'http://localhost/auth/steam/callback',
+//     realm: 'http://localhost/',
+//     apiKey: keys.steam.apiKey
+// }, (identifier, profile, done) => {
+//     User.findOne({ "steam.id": profile.id }).then(existing_user => {
+//         let returning_user = {};
 
-        if (existing_user) {
+//         if (existing_user) {
 
-            // set returning_user for token key
-            returning_user = UserRepository.set_user_for_token_key(existing_user);
+//             // set returning_user for token key
+//             returning_user = UserRepository.set_user_for_token_key(existing_user);
 
-            return cb(null, returning_user);
+//             return cb(null, returning_user);
 
-        } else {
-            const user = new User({
-                "steam.nick": profile.displayName,
-                "steam.id": profile.id,
-                "steam.avatar": profile.photos[0].value,
-                "steam.url": profile._json.profileurl
-            });
+//         } else {
+//             const user = new User({
+//                 "steam.nick": profile.displayName,
+//                 "steam.id": profile.id,
+//                 "steam.avatar": profile.photos[0].value,
+//                 "steam.url": profile._json.profileurl
+//             });
 
-            user
-                .save()
-                .then(new_user => {
+//             user
+//                 .save()
+//                 .then(new_user => {
 
-                    // set returning_user for token key
-                    returning_user = UserRepository.set_user_for_token_key(new_user);
+//                     // set returning_user for token key
+//                     returning_user = UserRepository.set_user_for_token_key(new_user);
 
-                    return done(null, returning_user);
-                });
-        }
-    });
-}));
+//                     return done(null, returning_user);
+//                 });
+//         }
+//     });
+// }));
 
 

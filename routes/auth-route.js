@@ -1,5 +1,3 @@
-'use strict'
-
 const mongoose = require('mongoose');
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
@@ -112,14 +110,10 @@ router.post('/login_with_google', (req, res) => {
 
 // verify token key
 router.get('/verify_token_key', passport.authenticate('jwt', { session: false }), (req, res) => {
-    UserRepository.check_token_key(req.get('Authorization'), (error, decoded) => {
-        // if token key is invalid
-        if (error) res.json({ success: false, error: { msg: err.msg, code: 4001 } });
-        // if token key is valid
-        else res.json({ success: true });
-    });
-}
-);
+    TokenKeyService.verify_token_key(req.get('Authorization').substring(4), keys.token_key.secret, (result) => {
+        return res.json({ success: result.success });
+    })
+});
 
 // check permission access control
 router.post('/check_permission', passport.authenticate('jwt', { session: false }), (req, res) => {
@@ -131,8 +125,7 @@ router.post('/check_permission', passport.authenticate('jwt', { session: false }
     } else {
         res.json({ success: false });
     }
-}
-);
+});
 
 // decode token key of Authorization header
 router.get('/decode_token_key', passport.authenticate('jwt', { session: false }), (req, res) => {
@@ -142,8 +135,7 @@ router.get('/decode_token_key', passport.authenticate('jwt', { session: false })
         if (err) res.json({ success: false, err: err.msg });
         else res.json({ success: true, user: req.user });
     });
-}
-);
+});
 
 // OAUTH 2 - START //
 
