@@ -20,7 +20,89 @@ set_user_for_token_key = function (user) {
         role: user.role
     };
 }
-//
+
+// user methods
+
+edit_settings = async function (params) {
+
+    let result;
+
+    let query =
+    {
+        $set: {
+        }
+    };
+
+    if (params.email) {
+        // if email already exists
+        result = await User.countDocuments({ email: params.email }).then(count => {
+            if (count) {
+                return { success: false, error: { code: 2002 } };
+            } else {
+                query.$set.email = params.email;
+            }
+        });
+        if (result) return result;
+    }
+    if (params.username) {
+        // if email already exists
+        result = await User.countDocuments({ username: params.username }).then(count => {
+            if (count) {
+                return { success: false, error: { code: 2001 } };
+            } else {
+                query.$set.username = params.username;
+            }
+        });
+        if (result) return result;
+    }
+    if (params.gender) {
+        query.$set.gender = params.gender;
+    }
+    if (params.fullname) {
+        query.$set.fullname = params.fullname;
+    }
+    if (params.birth_date) {
+        let birth_date = (new Date(params.birth_date)).toJSON();
+        if (birth_date != NaN) {
+            query.$set.birth_date = birth_date
+        }
+    }
+
+    result = await User.updateOne({ _id: params.id }, query).then(update_result => {
+        return { success: update_result.nModified == 1 };
+    });
+
+    return result;
+}
+
+is_email_exists = function (email) {
+    if (email) {
+        User.countDocuments({ email: email }, (error, count) => {
+            if (error) return callback({ code: 1001 }, null);
+            // email exists
+            else if (count)
+                return callback({ code: 2002 }, null);
+            else return callback(null, { success: true, });
+        });
+    }
+    else return callback({ code: 2006 }, null);
+}
+
+is_username_exists = function (username) {
+    if (username) {
+        User.countDocuments({ username: username }, (error, count) => {
+            if (error) return callback({ code: 1001 }, null);
+            // email exists
+            else {
+                if (count) return callback(null, { success: true });
+                else return callback(null, { success: false });
+            }
+        });
+    }
+    else return callback({ code: 2006 }, null);
+}
+
+// friend methods
 
 get_user_by_id = function (id, callback) {
     User.findById(id, callback);
@@ -753,5 +835,6 @@ module.exports = {
     cancel_friend_request: cancel_friend_request,
     remove_friend: remove_friend,
     login_with_google: login_with_google,
-    login_with_facebook: login_with_facebook
+    login_with_facebook: login_with_facebook,
+    edit_settings: edit_settings
 }

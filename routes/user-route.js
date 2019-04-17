@@ -25,7 +25,7 @@ router.get('/get_profile', passport.authenticate('jwt', { session: false }), (re
         UserRepository.get_profile(target_user_id, (error, result) => {
             if (error) return res.json({ success: false, error: error });
             else {
-                res.json({
+                return res.json({
                     success: result.success,
                     user: result.user,
                     is_same_user: req.user.id == target_user_id
@@ -42,7 +42,7 @@ router.get('/get_profile/:user_id', (req, res) => {
 
     UserRepository.get_profile(target_user_id, (error, result) => {
         if (error) return res.json({ success: false, error: error });
-        else res.json(result);
+        else return res.json(result);
     });
 });
 
@@ -58,7 +58,7 @@ router.get('/get_conversation', passport.authenticate('jwt', { session: false })
         if (target_user_id && source_user_id) {
             UserRepository.get_conversation(target_user_id, source_user_id, (error, result) => {
                 if (error) return res.json({ success: false, error: error });
-                else res.json(result);
+                else return res.json(result);
             });
         } else {
             return res.json({ success: false, error: { code: 2006 } });
@@ -79,7 +79,7 @@ router.post('/add_friend', passport.authenticate('jwt', { session: false }), (re
 
             UserRepository.add_friend(target_user_id, source_user_id, (error, result) => {
                 if (error) return res.json({ success: false, error: error });
-                else res.json(result);
+                else return res.json(result);
             });
 
         } else {
@@ -101,7 +101,7 @@ router.post('/accept_friend_request', passport.authenticate('jwt', { session: fa
 
             UserRepository.accept_friend_request(target_user_id, source_user_id, (error, result) => {
                 if (error) return res.json({ success: false, error: error });
-                else res.json(result);
+                else return res.json(result);
             });
 
         } else {
@@ -123,7 +123,7 @@ router.post('/cancel_friend_request', passport.authenticate('jwt', { session: fa
 
             UserRepository.cancel_friend_request(target_user_id, source_user_id, (error, result) => {
                 if (error) return res.json({ success: false, error: error });
-                else res.json(result);
+                else return res.json(result);
             });
 
         } else {
@@ -145,7 +145,7 @@ router.post('/ignore_friend_request', passport.authenticate('jwt', { session: fa
 
             UserRepository.ignore_friend_request(target_user_id, source_user_id, (error, result) => {
                 if (error) return res.json({ success: false, error: error });
-                else res.json(result);
+                else return res.json(result);
             });
 
         } else {
@@ -164,7 +164,7 @@ router.post('/get_friends', passport.authenticate('jwt', { session: false }), (r
         if (user_id) {
             UserRepository.get_friends(user_id, (error, result) => {
                 if (error) return res.json({ success: false, error: error });
-                else res.json(result);
+                else return res.json(result);
             });
 
         } else {
@@ -191,7 +191,7 @@ router.post('/remove_friend', passport.authenticate('jwt', { session: false }), 
                     // remove source user from target's friends
                     UserRepository.remove_friend(source_user_id, target_user_id, (error, result2) => {
                         if (error) return res.json({ success: false, error: error });
-                        else res.json({ success: true });
+                        else return res.json({ success: true });
                     });
                 }
             });
@@ -215,7 +215,7 @@ router.post('/is_friend', passport.authenticate('jwt', { session: false }), (req
 
             UserRepository.is_friend(target_user_id, source_user_id, (error, result) => {
                 if (error) return res.json({ success: false, error: error });
-                else res.json(result);
+                else return res.json(result);
             });
 
         } else {
@@ -234,7 +234,7 @@ router.post('/get_friend_requests', passport.authenticate('jwt', { session: fals
         if (user_id) {
             UserRepository.get_friend_requests(user_id, (error, result) => {
                 if (error) return res.json({ success: false, error: error });
-                else res.json(result);
+                else return res.json(result);
             });
 
         } else {
@@ -256,7 +256,7 @@ router.post('/is_friend_request_received', passport.authenticate('jwt', { sessio
 
             UserRepository.is_friend_request(target_user_id, source_user_id, (error, result) => {
                 if (error) return res.json({ success: false, error: error });
-                else res.json(result);
+                else return res.json(result);
             });
 
         }
@@ -278,12 +278,34 @@ router.post('/is_friend_request_sent', passport.authenticate('jwt', { session: f
 
             UserRepository.is_friend_request(source_user_id, target_user_id, (error, result) => {
                 if (error) return res.json({ success: false, error: error });
-                else res.json(result);
+                else return res.json(result);
             });
 
         }
-        else
-            return res.json({ success: false, error: { code: 2006 } });
+        else return res.json({ success: false, error: { code: 2006 } });
+    });
+});
+
+// set user info , settings
+router.post('/edit_settings', passport.authenticate('jwt', { session: false }), (req, res) => {
+
+    // check permission for this path
+    AuthenticationService.access_control(req, res, { router_path: router.path }, () => {
+        let params = {
+            id: req.user.id,
+            email: req.body.email,
+            username: req.body.username,
+            birth_date: req.body.birth_date,
+            gender: req.body.gender,
+            fullname: req.body.fullname
+        };
+
+        if (params.email || params.username || params.birth_day || params.gender || params.fullname) {
+            UserRepository.edit_settings(params).then(result => {
+                return res.json(result);
+            });
+        }
+        else return res.json({ success: false, error: { code: 2006 } });
     });
 });
 

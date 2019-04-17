@@ -45,6 +45,10 @@ const UserSchema = mongoose.Schema({
         default: true,
         required: true
     },
+    birth_date: {
+        type: Date,
+        required: false
+    },
     role: {
         type: String,
         required: true,
