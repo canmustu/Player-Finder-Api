@@ -61,11 +61,8 @@ edit_settings = async function (params) {
     if (params.fullname) {
         query.$set.fullname = params.fullname;
     }
-    if (params.birth_date) {
-        let birth_date = (new Date(params.birth_date)).toJSON();
-        if (birth_date != NaN) {
-            query.$set.birth_date = birth_date
-        }
+    if (params.password) {
+        user.password = encyrpt_as_a_password(user.password);
     }
 
     result = await User.updateOne({ _id: params.id }, query).then(update_result => {

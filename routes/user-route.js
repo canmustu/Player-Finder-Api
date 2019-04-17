@@ -297,7 +297,8 @@ router.post('/edit_settings', passport.authenticate('jwt', { session: false }), 
             username: req.body.username,
             birth_date: req.body.birth_date,
             gender: req.body.gender,
-            fullname: req.body.fullname
+            fullname: req.body.fullname,
+            password: req.body.password
         };
 
         if (params.email || params.username || params.birth_day || params.gender || params.fullname) {
