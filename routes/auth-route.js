@@ -125,7 +125,7 @@ router.post('/login_with_google', (req, res) => {
 
 // verify token key
 router.get('/verify_token_key', passport.authenticate('jwt', { session: false }), (req, res) => {
-    TokenKeyService.verify_token_key(req.get('Authorization').substring(4), keys.token_key.secret, (result) => {
+    TokenKeyService.verify_token_key(req.get('Authorization').substring(4), (result) => {
         return res.json({ success: result.success });
     })
 });

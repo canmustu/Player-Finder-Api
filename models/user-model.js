@@ -56,6 +56,7 @@ const UserSchema = mongoose.Schema({
     },
     inbox: [
         {
+            _id: false,
             from: {
                 user: {
                     id: {

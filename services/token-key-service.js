@@ -9,10 +9,10 @@ function create_token_key(params) {
     );
 }
 
-function verify_token_key(token_key, secret_key, callback) {
-    jwt.verify(token_key, secret_key, (err, decoded) => {
-        if (err || !decoded) return callback({ success: false });
-        else return callback({ success: true });
+function verify_token_key(token_key, callback) {
+    jwt.verify(token_key, keys.token_key.secret, (error, decoded) => {
+        if (error || !decoded) return callback({ success: false });
+        else return callback({ success: true, user: decoded.user });
     });
 }
 

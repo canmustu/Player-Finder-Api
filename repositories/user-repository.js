@@ -99,8 +99,44 @@ is_username_exists = function (username) {
 
 // messages methods
 
-push_to_inbox = function (message) {
+push_to_inbox = function (message, callback) {
+    // query to check if request exists
+    let query = { _id: { $in: [message.from, message.to] } };
 
+    // check if request exists
+    User.countDocuments(query, (error, count) => {
+        if (error) return callback({ code: '1001' }, null);
+
+        // to and from exist
+        else if (count == 2) {
+
+            // push message into inbox of 'to' user
+            User.updateOne(
+                { _id: message.to },
+                {
+                    '$push': {
+                        inbox: {
+                            from: {
+                                user: {
+                                    id: message.from
+                                }
+                            },
+                            message: message.content,
+                            received_at: new Date()
+                        }
+                    },
+                }, (error, result) => {
+                    if (error) return callback({ code: '1001' }, null);
+                    else if (result.n > 0) return callback(null, { success: true });
+                    else return callback({ code: '2011' }, null);
+                }
+            );
+        }
+        // no user exist
+        else {
+            return callback({ code: '2003' }, null);
+        }
+    });
 }
 
 // friend methods
@@ -114,6 +150,7 @@ get_profile = function (user_id, callback) {
     User.findById(user_id, {
         "fullname": 1,
         "username": 1,
+        "gender": 1,
         "email": 1,
         "avatar": 1,
         "last_seen": 1,
