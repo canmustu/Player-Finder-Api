@@ -59,30 +59,43 @@ passport.use(new GoogleStrategy({
             return done(null, returning_user);
 
         } else {
-            const user = new User({
-                fullname: email.displayName,
-                gender: email.gender == 'male' ? true : false,
-                email: email.emails[0].value,
-                avatar: email.photos[0].value,
-                "google.id": email.id
+
+            User.findOne({ email: email.emails[0].value }, (error, found_user) => {
+                if (error) return callback({ code: 1001 }, null);
+                // email not exist , then register
+                else if (!found_user) {
+                    const user = new User({
+                        fullname: email.displayName,
+                        gender: email.gender == 'male' ? true : false,
+                        email: email.emails[0].value,
+                        avatar: email.photos[0].value,
+                        "google.id": email.id
+                    });
+                    user.username = "ISIMSIZ_" + user._id;
+
+                    // avatar of google size changed
+                    user.avatar = user.avatar.replace("sz=50", "sz=200");
+
+                    user
+                        .save()
+                        .then(new_user => {
+
+                            // set returning_user for token key
+                            returning_user = UserRepository.set_user_for_token_key(new_user);
+
+                            // return register info
+                            returning_user.success_type = "register";
+
+                            return done(null, returning_user);
+                        });
+                }
+                // email exists
+                else {
+                    return done({ code: 2002 }, null);
+                }
             });
-            user.username = "ISIMSIZ_" + user._id;
 
-            // avatar of google size changed
-            user.avatar = user.avatar.replace("sz=50", "sz=200");
 
-            user
-                .save()
-                .then(new_user => {
-
-                    // set returning_user for token key
-                    returning_user = UserRepository.set_user_for_token_key(new_user);
-
-                    // return register info
-                    returning_user.success_type = "register";
-
-                    return done(null, returning_user);
-                });
         }
     });
 }));
@@ -95,8 +108,10 @@ passport.use(new FacebookStrategy({
     profileFields: ['id', 'displayName', 'gender', 'emails', 'profileUrl'],
 }, (accessToken, refreshToken, profile, cb) => {
     User.findOne({ "facebook.id": profile.id }).then(existing_user => {
+
         let returning_user = {};
 
+        // user exists
         if (existing_user) {
 
             // set returning_user for token key
@@ -106,32 +121,43 @@ passport.use(new FacebookStrategy({
             returning_user.success_type = "login";
 
             return cb(null, returning_user);
+        }
+        // check email to be registered
+        else {
+            User.findOne({ email: profile.emails[0].value }, (error, found_user) => {
+                if (error) return callback({ code: 1001 }, null);
+                // email not exist , then register
+                else if (!found_user) {
 
-        } else {
+                    const user = new User({
+                        fullname: profile.displayName,
+                        gender: profile.gender == 'male' ? true : false,
+                        email: profile.emails[0].value,
+                        avatar: "http://graph.facebook.com/" + profile.id + "/picture?type=large",
+                        "facebook.id": profile.id,
+                        "facebook.url": profile.profileUrl,
+                    });
 
-            const user = new User({
-                fullname: profile.displayName,
-                gender: profile.gender == 'male' ? true : false,
-                email: profile.emails[0].value,
-                avatar: "http://graph.facebook.com/" + profile.id + "/picture?type=large",
-                "facebook.id": profile.id,
-                "facebook.url": profile.profileUrl,
+                    user.username = "ISIMSIZ_" + user._id;
+
+                    user
+                        .save()
+                        .then(new_user => {
+
+                            // set returning_user for token key
+                            returning_user = UserRepository.set_user_for_token_key(new_user);
+
+                            // return register info
+                            returning_user.success_type = "register";
+
+                            return cb(null, returning_user);
+                        });
+                }
+                // email exists
+                else {
+                    return cb({ code: 2002 }, null);
+                }
             });
-
-            user.username = "ISIMSIZ_" + user._id;
-
-            user
-                .save()
-                .then(new_user => {
-
-                    // set returning_user for token key
-                    returning_user = UserRepository.set_user_for_token_key(new_user);
-
-                    // return register info
-                    returning_user.success_type = "register";
-
-                    return cb(null, returning_user);
-                });
         }
     });
 }));

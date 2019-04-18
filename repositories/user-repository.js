@@ -628,33 +628,46 @@ login_with_google = function (user, callback) {
 
         // register
         else {
-            const new_user = new User({
-                fullname: user.fullname,
-                email: user.email,
-                avatar: user.avatar,
-                google: {
-                    id: user.google.id
+            User.findOne({ email: user.email }, (error, found_user) => {
+                if (error) return callback({ code: 1001 }, null);
+                // email not exist , then register
+                else if (!found_user) {
+                    const new_user = new User({
+                        fullname: user.fullname,
+                        email: user.email,
+                        avatar: user.avatar,
+                        google: {
+                            id: user.google.id
+                        }
+                    });
+
+                    new_user.username = "ISIMSIZ_" + new_user._id;
+
+                    // avatar of google size changed
+                    if (new_user.avatar) new_user.avatar = new_user.avatar.replace("sz=50", "sz=200");
+
+                    new_user
+                        .save()
+                        .then(usr => {
+
+                            // set returning_user for token key
+                            returning_user = set_user_for_token_key(usr);
+
+                            return callback(null, {
+                                success: true,
+                                user: set_user_for_token_key(returning_user),
+                                token_key: TokenKeyService.create_token_key({ user: set_user_for_token_key(returning_user) })
+                            });
+                        });
+                }
+                // email exists , not register
+                else {
+                    return callback({ code: 2002 }, null);
                 }
             });
 
-            new_user.username = "ISIMSIZ_" + new_user._id;
 
-            // avatar of google size changed
-            if (new_user.avatar) new_user.avatar = new_user.avatar.replace("sz=50", "sz=200");
 
-            new_user
-                .save()
-                .then(usr => {
-
-                    // set returning_user for token key
-                    returning_user = set_user_for_token_key(usr);
-
-                    return callback(null, {
-                        success: true,
-                        user: set_user_for_token_key(returning_user),
-                        token_key: TokenKeyService.create_token_key({ user: set_user_for_token_key(returning_user) })
-                    });
-                });
         }
     });
 }
@@ -662,8 +675,6 @@ login_with_google = function (user, callback) {
 login_with_facebook = function (user, callback) {
 
     User.findOne({ "facebook.id": user.facebook.id }, (error, existing_user) => {
-
-        console.log(existing_user);
 
         let returning_user = {};
 
@@ -693,8 +704,8 @@ login_with_facebook = function (user, callback) {
                     const new_user = new User({
                         fullname: user.fullname,
                         email: user.email,
-                        google: {
-                            id: user.google.id
+                        facebook: {
+                            id: user.facebook.id
                         }
                     });
 
@@ -715,7 +726,9 @@ login_with_facebook = function (user, callback) {
                         });
                 }
                 // email exists , not register
-                else return callback({ code: 2002 }, null);
+                else {
+                    return callback({ code: 2002 }, null);
+                }
             });
         }
 

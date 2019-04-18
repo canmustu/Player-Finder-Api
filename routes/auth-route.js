@@ -14,13 +14,28 @@ router.path = '/auth';
 
 function redirect_to_website(req, res) {
 
-    let success_type = req.user.success_type;
+    if (req.user) {
+        let token_key = TokenKeyService.create_token_key({ user: req.user });
+        let return_url = req.session.return_url ? req.session.return_url : '';
+        let success_type = req.user.success_type;
 
-    req.user.success_type = undefined;
+        req.user.success_type = undefined;
 
-    res.redirect(keys.website_url + 'auth/loggedin/' + TokenKeyService.create_token_key({ user: req.user }) +
-        '?return_url=' + (req.session.return_url ? req.session.return_url : '') +
-        '&success_type=' + success_type);
+        delete req.session.return_url;
+
+        res.redirect(keys.website_url + 'auth/loggedin/' + token_key +
+            '?return_url=' + return_url +
+            '&success_type=' + success_type);
+    }
+    else {
+        let error_string;
+
+        if (req.error_code == "2002") {
+            error_string = "Kayıt olmaya çalıştığınız email sistemde zaten mevcut.";
+        }
+
+        res.redirect(keys.website_url + 'error/error?description=' + error_string);
+    }
 }
 
 // login
@@ -153,11 +168,15 @@ router.get(
 
 router.get(
     '/google/callback',
-    passport.authenticate('google'),
     (req, res) => {
+        passport.authenticate('google', (error, user) => {
 
-        // redirect to website
-        redirect_to_website(req, res);
+            if (error) req.error_code = error.code;
+            req.user = user;
+
+            // redirect to website
+            redirect_to_website(req, res);
+        })(req, res)
     }
 );
 // google oauth 2 end
@@ -174,37 +193,43 @@ router.get(
 
 router.get(
     '/facebook/callback',
-    passport.authenticate('facebook'),
     (req, res) => {
-        // redirect to website
-        redirect_to_website(req, res);
+        passport.authenticate('facebook', (error, user) => {
+
+            if (error) req.error_code = error.code;
+            req.user = user;
+
+            // redirect to website
+            redirect_to_website(req, res);
+        })(req, res)
     }
 );
+
 // facebook oauth 2 end
 
 // steam oauth 2 start
-router.get(
-    '/steam',
-    (req, res, next) => {
-        req.session.return_url = req.query.return_url;
-        next();
-    },
-    passport.authenticate('steam'),
-    function (req, res) {
-        // The request will be redirected to Steam for authentication, so
-        // this function will not be called.
-    }
-);
+// router.get(
+//     '/steam',
+//     (req, res, next) => {
+//         req.session.return_url = req.query.return_url;
+//         next();
+//     },
+//     passport.authenticate('steam'),
+//     function (req, res) {
+//         // The request will be redirected to Steam for authentication, so
+//         // this function will not be called.
+//     }
+// );
 
-router.get(
-    '/steam/callback',
-    passport.authenticate('steam', { session: false }),
-    (req, res) => {
+// router.get(
+//     '/steam/callback',
+//     passport.authenticate('steam', { session: false }),
+//     (req, res) => {
 
-        // redirect to website
-        redirect_to_website(req, res);
-    }
-);
+//         // redirect to website
+//         redirect_to_website(req, res);
+//     }
+// );
 // steam oauth 2 end
 
 // OAUTH 2 - END //
