@@ -10,15 +10,36 @@ module.exports = (io) => {
             console.log("user disconnected");
         });
 
-        socket.on('server', function (message) {
-            console.log(JSON.stringify(message));
-            io.emit(message.to, { from: message.from, content: message.content });
-            if (message.type == 'lobby') {
+        socket.on('server', function (params) {
 
-            } else if (message.type == 'user') {
-                UserRepository.push_to_inbox(message, (error, result) => {
-                    console.log(error, result);
-                })
+            let message = {
+                type: params.type,
+                to: params.to,
+                from: params.from,
+                content: params.content
+            };
+
+            console.log(JSON.stringify(message));
+
+            // user chat
+            if (message.type == 'user_msg') {
+
+                io.emit(message.to, { type: message.type, from: message.from, content: message.content });
+                // UserRepository.push_to_inbox(message, (error, result) => {
+                //     console.log(error, result);
+                // });
+            }
+            // in lobby chat
+            else if (message.type == 'lobby_msg') {
+
+            }
+            // add friend notification
+            else if (message.type == 'add_friend') {
+
+            }
+            // do nothing
+            else {
+
             }
         });
 

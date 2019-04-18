@@ -8,8 +8,6 @@ const User = require('../models/user-model');
 const TokenKeyService = require('../services/token-key-service');
 const EncryptionService = require('../services/encryption-service');
 
-const salt_for_password = keys.encryption.salt_for_password;
-
 // return an object for token key claims
 set_user_for_token_key = function (user) {
     return {
@@ -97,6 +95,12 @@ is_username_exists = function (username) {
         });
     }
     else return callback({ code: 2006 }, null);
+}
+
+// messages methods
+
+push_to_inbox = function (message) {
+
 }
 
 // friend methods
@@ -592,7 +596,7 @@ login = function (user, callback) {
     })
 }
 
-// MOBILE SPECIFIC FUNCTIONS
+// START - MOBILE SPECIFIC FUNCTIONS
 
 login_with_google = function (user, callback) {
 
@@ -723,6 +727,8 @@ login_with_facebook = function (user, callback) {
     });
 }
 
+// END - MOBILE SPECIFIC FUNCTIONS
+
 // broken method
 forget_password = function (email, callback) {
     const new_password = randomstring.generate({
@@ -798,5 +804,6 @@ module.exports = {
     remove_friend: remove_friend,
     login_with_google: login_with_google,
     login_with_facebook: login_with_facebook,
-    edit_settings: edit_settings
+    edit_settings: edit_settings,
+    push_to_inbox: push_to_inbox
 }

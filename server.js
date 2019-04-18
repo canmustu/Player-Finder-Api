@@ -34,7 +34,7 @@ app.use(session({
     saveUninitialized: true,
     resave: true,
     cookie: {
-        maxAge: 3 * 60 * 1000, // 3 minute
+        maxAge: 5 * 60 * 1000, // 5 minute
     }
 }));
 
@@ -55,13 +55,6 @@ const user_route = require('./routes/user-route')
 app.use(auth_route.path, auth_route);
 app.use(permission_route.path, permission_route);
 app.use(user_route.path, user_route);
-
-//
-
-app.get('/', (req, res) => {
-    if (req.user) res.send(req.user);
-    else res.send("hello world için çok geç değil mi çocuk adam ?<div></div><a href='/auth/steam'>STEAM</a> <a href='/auth/facebook'>FACEBOOK</a> <a href='/auth/google'>GOOGLE</a>");
-});
 
 // start project
 const port = process.env.PORT || 80;
