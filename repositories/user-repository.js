@@ -4,9 +4,9 @@ const nodemailer = require('nodemailer');
 const keys = require('../config/keys');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
-const encryption = require('../utilization/encryption');
 const User = require('../models/user-model');
 const TokenKeyService = require('../services/token-key-service');
+const EncryptionService = require('../services/encryption-service');
 
 const salt_for_password = keys.encryption.salt_for_password;
 
@@ -62,7 +62,7 @@ edit_settings = async function (params) {
         query.$set.fullname = params.fullname;
     }
     if (params.password) {
-        user.password = encyrpt_as_a_password(user.password);
+        user.password = EncryptionService.encyrpt_as_a_password(user.password);
     }
 
     result = await User.updateOne({ _id: params.id }, query).then(update_result => {
@@ -537,7 +537,7 @@ register = function (user, callback) {
                 if (username_count == 0) {
                     try {
                         // encrypt the following password
-                        user.password = encyrpt_as_a_password(user.password);
+                        user.password = EncryptionService.encyrpt_as_a_password(user.password);
                         // insert to db
                         user
                             .save()
@@ -574,7 +574,7 @@ login = function (user, callback) {
         // if user exists
         if (existing_user) {
             // compare password
-            if (compare_password(encyrpt_as_a_password(user.password), existing_user.password)) {
+            if (compare_password(EncryptionService.encyrpt_as_a_password(user.password), existing_user.password)) {
                 // login successful
                 return callback(null, {
                     success: true,
@@ -591,18 +591,6 @@ login = function (user, callback) {
         }
     })
 }
-
-// check_token_key = function (authorization_header, callback) {
-//     // Authorization header = "JWT {token_key}"
-//     // first 4 characters will be deleted and be taken token key to decode
-//     let token_key = authorization_header.substring(4);
-
-//     jwt.verify(token_key, keys.token_key.secret, (err, decoded) => {
-//         return callback(err, decoded);
-//     });
-// }
-
-//
 
 // MOBILE SPECIFIC FUNCTIONS
 
@@ -735,8 +723,7 @@ login_with_facebook = function (user, callback) {
     });
 }
 
-// broken methods
-
+// broken method
 forget_password = function (email, callback) {
     const new_password = randomstring.generate({
         length: 6,
@@ -745,7 +732,7 @@ forget_password = function (email, callback) {
 
     User.updateOne(
         { email: email },
-        { password: get_hash(new_password + keys.encryption.salt_for_password) },
+        { password: EncryptionService.get_hash_with_salt(new_password) },
         (err, raw) => {
             if (err) return callback({ success: false }, null)
             if (!raw.ok) return callback({ success: false, code: 700 }, null)
@@ -786,48 +773,11 @@ forget_password = function (email, callback) {
     )
 }
 
-change_passsword = function (user_id, old_password, new_password, callback) {
-    User.updateOne(
-        { _id: user_id, password: get_hash(old_password + salt_for_password) },
-        { password: get_hash(new_password + salt_for_password) },
-        (err, raw) => {
-            if (err) return callback({ success: false, code: 1001 }, null)
-            if (!raw.ok) return callback({ success: false, code: 700 }, null)
-            if (raw.n == 0) {
-                return callback(null, { success: false, code: 300 })
-            } else if (raw.nModified > 0) {
-                return callback(null, { success: true })
-            } else {
-                return callback(null, { success: false, code: 700 })
-            }
-        }
-    )
-}
-
-//
-
 compare_password = function (password, hash) {
     if (password === hash)
         return true;
     else
         return false;
-}
-
-get_hash = function (str, alg = 'sha256') {
-    let hash = crypto.createHash(alg);
-    hash.update(str);
-    return hash.digest('hex');
-}
-
-encrypt_text = function (text, times) {
-    for (let i = 0; i < times; i++) {
-        text = get_hash(text + salt_for_password)
-    }
-    return text;
-}
-
-encyrpt_as_a_password = function (text) {
-    return encrypt_text(text, 10);
 }
 
 module.exports = {
@@ -836,8 +786,6 @@ module.exports = {
     register: register,
     login: login,
     forget_password: forget_password,
-    change_passsword: change_passsword,
-    // check_token_key: check_token_key,
     get_profile: get_profile,
     add_friend: add_friend,
     accept_friend_request: accept_friend_request,
