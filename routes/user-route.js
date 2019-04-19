@@ -10,7 +10,7 @@ const UserRepository = require('../repositories/user-repository');
 
 const AuthenticationService = require('../services/authentication-service');
 
-router.path = '/user'
+router.path = '/user';
 
 // get profile - authenticated user
 router.get('/get_profile', passport.authenticate('jwt', { session: false }), (req, res) => {
@@ -292,7 +292,8 @@ router.post('/edit_settings', passport.authenticate('jwt', { session: false }), 
     // check permission for this path
     AuthenticationService.access_control(req, res, { router_path: router.path }, () => {
         let params = {
-            id: req.user.id,
+            id: req.user.id, // from token_key
+
             email: req.body.email,
             username: req.body.username,
             birth_date: req.body.birth_date,
@@ -301,7 +302,7 @@ router.post('/edit_settings', passport.authenticate('jwt', { session: false }), 
             password: req.body.password
         };
 
-        if (params.email || params.username || params.birth_day || params.gender || params.fullname) {
+        if (Object.keys(params).length > 1) {
             UserRepository.edit_settings(params).then(result => {
                 return res.json(result);
             });

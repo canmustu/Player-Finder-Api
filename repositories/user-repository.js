@@ -43,7 +43,7 @@ edit_settings = async function (params) {
         if (result) return result;
     }
     if (params.username) {
-        // if email already exists
+        // if username already exists
         result = await User.countDocuments({ username: params.username }).then(count => {
             if (count) {
                 return { success: false, error: { code: 2001 } };
@@ -53,6 +53,7 @@ edit_settings = async function (params) {
         });
         if (result) return result;
     }
+    
     if (params.gender) {
         query.$set.gender = params.gender;
     }
@@ -60,7 +61,14 @@ edit_settings = async function (params) {
         query.$set.fullname = params.fullname;
     }
     if (params.password) {
-        user.password = EncryptionService.encyrpt_as_a_password(user.password);
+        query.$set.password = EncryptionService.encyrpt_as_a_password(params.password);
+    }
+    if (params.birth_date) {
+        try {
+            query.$set.birth_date = new Date(params.birth_date);
+        }
+        catch(e) {
+        }
     }
 
     result = await User.updateOne({ _id: params.id }, query).then(update_result => {
