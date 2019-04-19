@@ -16,13 +16,20 @@ check_permission = async function (role, requested_url) {
 
     // find first sub permissions
     await Permission.findOne({ role: role }, { _id: 0, url_permissions: 1, sub_permissions: 1 })
-        .then(async (first_permission_result) => {
+        .then(async (result_first_permission) => {
+            if (result_first_permission) {
+                first_permissions = result_first_permission;
 
-            first_permissions = first_permission_result;
-
-            // first_permissions to temp
-            sub_permissions_temp = first_permissions.sub_permissions;
+                // first_permissions to temp
+                sub_permissions_temp = first_permissions.sub_permissions;
+            }
+            else {
+                result = { success: false };
+            }
         });
+
+    // 401 Unauthorized
+    if (result && !result.success) return result;
 
     // adding to url_permissions
     url_permissions = [...first_permissions.url_permissions.map(item => { return item.toString() })];
