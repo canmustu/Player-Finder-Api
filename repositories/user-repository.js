@@ -179,7 +179,14 @@ get_conversation = function (target_user_id, source_user_id, callback) {
     ], (error, result) => {
         // if error
         if (error) return callback({ code: 1001 }, null);
-        else if (result[0].inbox) return callback(null, { success: true, inbox: result[0].inbox });
+        else if (result[0].inbox) {
+            // sort by received_at field
+            result[0].inbox.sort(function (a, b) {
+                return new Date(a.received_at) - new Date(b.received_at);
+            });
+
+            return callback(null, { success: true, inbox: result[0].inbox });
+        }
         else return callback({ code: 1001 }, null);
     });
 }

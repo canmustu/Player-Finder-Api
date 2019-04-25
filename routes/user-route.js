@@ -76,10 +76,13 @@ router.post('/get_conversation', passport.authenticate('jwt', { session: false }
         let source_user_id = req.user.id;
 
         if (target_user_id && source_user_id) {
-            UserRepository.get_conversation(target_user_id, source_user_id, (error, result) => {
-                if (error) return res.json({ success: false, error: error });
-                else return res.json(result);
-            });
+            if (target_user_id == source_user_id) return res.json({ success: false });
+            else {
+                UserRepository.get_conversation(target_user_id, source_user_id, (error, result) => {
+                    if (error) return res.json({ success: false, error: error });
+                    else return res.json(result);
+                });
+            }
         } else {
             return res.json({ success: false, error: { code: 2006 } });
         }
