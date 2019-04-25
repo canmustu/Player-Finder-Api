@@ -12,6 +12,26 @@ const AuthenticationService = require('../services/authentication-service');
 
 router.path = '/user';
 
+// get user by username
+router.post('/get_user_by_username', passport.authenticate('jwt', { session: false }), (req, res) => {
+    // check permission for this path
+    AuthenticationService.access_control(req, res, { router_path: router.path }, () => {
+        // target user id from body
+        let username = req.body.username;
+
+        if (username) {
+
+            UserRepository.get_user_by_username(username, (error, result) => {
+                if (error) return res.json({ success: false, error: error });
+                else return res.json(result);
+            });
+
+        } else {
+            return res.json({ success: false, error: { code: 2006 } });
+        }
+    });
+});
+
 // get profile - authenticated user
 router.get('/get_profile', passport.authenticate('jwt', { session: false }), (req, res) => {
     // check permission for this path
@@ -47,7 +67,7 @@ router.get('/get_profile/:user_id', (req, res) => {
 });
 
 // get conversation - between 2 users
-router.get('/get_conversation', passport.authenticate('jwt', { session: false }), (req, res) => {
+router.post('/get_conversation', passport.authenticate('jwt', { session: false }), (req, res) => {
     // check permission for this path
     AuthenticationService.access_control(req, res, { router_path: router.path }, () => {
         // target user id from url

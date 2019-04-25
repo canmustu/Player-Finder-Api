@@ -21,6 +21,21 @@ set_user_for_token_key = function (user) {
 
 // user methods
 
+get_user_by_id = function (id, callback) {
+    User.findById(id, callback);
+}
+
+get_user_by_username = function (username, callback) {
+    User.findOne({ username: username }, { _id: 1 }, (error, user) => {
+        // if error
+        if (error) return callback({ code: 1001 }, null);
+        // if user not exists
+        else if (!user) return callback({ code: 2003 }, null);
+        // if user exists
+        else return get_profile(user._id, callback);
+    });
+}
+
 edit_settings = async function (params) {
 
     let result;
@@ -53,7 +68,7 @@ edit_settings = async function (params) {
         });
         if (result) return result;
     }
-    
+
     if (params.gender) {
         query.$set.gender = params.gender;
     }
@@ -67,7 +82,7 @@ edit_settings = async function (params) {
         try {
             query.$set.birth_date = new Date(params.birth_date);
         }
-        catch(e) {
+        catch (e) {
         }
     }
 
@@ -78,32 +93,32 @@ edit_settings = async function (params) {
     return result;
 }
 
-is_email_exists = function (email) {
-    if (email) {
-        User.countDocuments({ email: email }, (error, count) => {
-            if (error) return callback({ code: 1001 }, null);
-            // email exists
-            else if (count)
-                return callback({ code: 2002 }, null);
-            else return callback(null, { success: true, });
-        });
-    }
-    else return callback({ code: 2006 }, null);
-}
+// is_email_exists = function (email) {
+//     if (email) {
+//         User.countDocuments({ email: email }, (error, count) => {
+//             if (error) return callback({ code: 1001 }, null);
+//             // email exists
+//             else if (count)
+//                 return callback({ code: 2002 }, null);
+//             else return callback(null, { success: true, });
+//         });
+//     }
+//     else return callback({ code: 2006 }, null);
+// }
 
-is_username_exists = function (username) {
-    if (username) {
-        User.countDocuments({ username: username }, (error, count) => {
-            if (error) return callback({ code: 1001 }, null);
-            // email exists
-            else {
-                if (count) return callback(null, { success: true });
-                else return callback(null, { success: false });
-            }
-        });
-    }
-    else return callback({ code: 2006 }, null);
-}
+// is_username_exists = function (username) {
+//     if (username) {
+//         User.countDocuments({ username: username }, (error, count) => {
+//             if (error) return callback({ code: 1001 }, null);
+//             // email exists
+//             else {
+//                 if (count) return callback(null, { success: true });
+//                 else return callback(null, { success: false });
+//             }
+//         });
+//     }
+//     else return callback({ code: 2006 }, null);
+// }
 
 // messages methods
 
@@ -113,7 +128,7 @@ push_to_inbox = function (message, callback) {
 
     // check if request exists
     User.countDocuments(query, (error, count) => {
-        if (error) return callback({ code: '1001' }, null);
+        if (error) return callback({ code: 1001 }, null);
 
         // to and from exist
         else if (count == 2) {
@@ -134,24 +149,43 @@ push_to_inbox = function (message, callback) {
                         }
                     },
                 }, (error, result) => {
-                    if (error) return callback({ code: '1001' }, null);
+                    if (error) return callback({ code: 1001 }, null);
                     else if (result.n > 0) return callback(null, { success: true });
-                    else return callback({ code: '2011' }, null);
+                    else return callback({ code: 2011 }, null);
                 }
             );
         }
         // no user exist
         else {
-            return callback({ code: '2003' }, null);
+            return callback({ code: 2003 }, null);
         }
     });
 }
 
-// friend methods
+// broken method
+get_conversation = function (target_user_id, source_user_id, callback) {
+    inbox = [];
 
-get_user_by_id = function (id, callback) {
-    User.findById(id, callback);
+    User.aggregate([
+        { "$match": { _id: { $in: [mongoose.Types.ObjectId(target_user_id), mongoose.Types.ObjectId(source_user_id)] } } },
+        { "$unwind": "$inbox" },
+        { "$match": { "inbox.from.user.id": { $in: [mongoose.Types.ObjectId(source_user_id), mongoose.Types.ObjectId(target_user_id)] } } },
+        {
+            "$group": {
+                "_id": null,
+                "inbox": { "$push": "$inbox" }
+            }
+        }
+    ], (error, result) => {
+        // if error
+        if (error) return callback({ code: 1001 }, null);
+        else if (result[0].inbox) return callback(null, { success: true, inbox: result[0].inbox });
+        else return callback({ code: 1001 }, null);
+    });
 }
+
+
+// friend methods
 
 get_profile = function (user_id, callback) {
     // check if username exists
@@ -161,22 +195,17 @@ get_profile = function (user_id, callback) {
         "gender": 1,
         "email": 1,
         "avatar": 1,
+        "birth_date": 1,
         "last_seen": 1,
         "karma_point": 1,
         "profile_visibility": 1
     }, (error, user) => {
         // if error
-        if (error) return callback({ code: '1001' }, null);
+        if (error) return callback({ code: 1001 }, null);
         // if user not exists
         else if (!user) {
-            return callback({ code: '2003' }, null);
+            return callback({ code: 2003 }, null);
         }
-
-        // if profile is private
-        // else if (!user.profile_visibility) {
-        //     return callback({ msg: "PRIVATE-PROFILE", code: '2005' }, null);
-        // }
-
         // if username exists
         else {
             return callback(null, { success: true, user: user });
@@ -190,7 +219,7 @@ add_friend = function (target_user_id, source_user_id, callback) {
 
     // if same user
     if (target_user_id == source_user_id) {
-        return callback({ code: '2010' }, null);
+        return callback({ code: 2010 }, null);
     }
     else {
 
@@ -201,7 +230,7 @@ add_friend = function (target_user_id, source_user_id, callback) {
         User.countDocuments(query, (error, count1) => {
 
             // if error
-            if (error) return callback({ code: '1001' }, null);
+            if (error) return callback({ code: 1001 }, null);
 
             // no friends
             else if (count1 == 0) {
@@ -212,7 +241,7 @@ add_friend = function (target_user_id, source_user_id, callback) {
                 User.countDocuments(query, (error, count2) => {
 
                     // if error
-                    if (error) return callback({ code: '1001' }, null);
+                    if (error) return callback({ code: 1001 }, null);
                     // if not sent before , send friend request
                     else if (count2 == 0) {
 
@@ -223,7 +252,7 @@ add_friend = function (target_user_id, source_user_id, callback) {
                         User.countDocuments(query, (error, count3) => {
 
                             // if error
-                            if (error) return callback({ code: '1001' }, null);
+                            if (error) return callback({ code: 1001 }, null);
                             // no request received
                             else if (count3 == 0) {
                                 User.updateOne(
@@ -238,7 +267,7 @@ add_friend = function (target_user_id, source_user_id, callback) {
                                             }
                                         }
                                     }, (error, result) => {
-                                        if (error) return callback({ code: '1001' }, null);
+                                        if (error) return callback({ code: 1001 }, null);
                                         else if (result.n) return callback(null, { success: true });
                                         else return callback({ code: 2003 }, null);
                                     }
@@ -253,13 +282,13 @@ add_friend = function (target_user_id, source_user_id, callback) {
                     }
                     // the request already sent
                     else {
-                        return callback({ code: '2008' }, null);
+                        return callback({ code: 2008 }, null);
                     }
                 });
             }
             // the user is already friend
             else {
-                return callback({ code: '2007' }, null);
+                return callback({ code: 2007 }, null);
             }
         });
     }
@@ -272,7 +301,7 @@ accept_friend_request = function (target_user_id, source_user_id, callback) {
 
     // check if request exists
     User.countDocuments(query, (error1, count) => {
-        if (error1) return callback({ code: '1001' }, null);
+        if (error1) return callback({ code: 1001 }, null);
 
         // if request exists
         else if (count > 0) {
@@ -286,7 +315,7 @@ accept_friend_request = function (target_user_id, source_user_id, callback) {
                         }
                     },
                 }, (error2, result_pull) => {
-                    if (error2) return callback({ code: '1001' }, null);
+                    if (error2) return callback({ code: 1001 }, null);
                     else if (result_pull.n > 0) {
 
                         // push friend to friends field - for source user
@@ -301,7 +330,7 @@ accept_friend_request = function (target_user_id, source_user_id, callback) {
                                     }
                                 }
                             }, (error3, result_push_source) => {
-                                if (error3) return callback({ code: '1001' }, null);
+                                if (error3) return callback({ code: 1001 }, null);
                                 else {
                                     // push friend to friends field - for source user
                                     User.updateOne(
@@ -315,7 +344,7 @@ accept_friend_request = function (target_user_id, source_user_id, callback) {
                                                 }
                                             }
                                         }, (error4, result_push_target) => {
-                                            if (error4) return callback({ code: '1001' }, null);
+                                            if (error4) return callback({ code: 1001 }, null);
                                             else return callback(null, { success: true });
                                         }
                                     );
@@ -324,14 +353,14 @@ accept_friend_request = function (target_user_id, source_user_id, callback) {
                         );
                     }
                     else {
-                        return callback({ code: '2009' }, null);
+                        return callback({ code: 2009 }, null);
                     }
                 }
             );
         }
         // no such request
         else {
-            return callback({ code: '2009' }, null);
+            return callback({ code: 2009 }, null);
         }
     });
 }
@@ -343,7 +372,7 @@ ignore_friend_request = function (target_user_id, source_user_id, callback) {
 
     // check if request exists
     User.countDocuments(query, (error, count) => {
-        if (error) return callback({ code: '1001' }, null);
+        if (error) return callback({ code: 1001 }, null);
 
         // friend request exists
         else if (count > 0) {
@@ -357,15 +386,15 @@ ignore_friend_request = function (target_user_id, source_user_id, callback) {
                         }
                     },
                 }, (error, result) => {
-                    if (error) return callback({ code: '1001' }, null);
+                    if (error) return callback({ code: 1001 }, null);
                     else if (result.n > 0) return callback(null, { success: true });
-                    else return callback({ code: '2009' }, null);
+                    else return callback({ code: 2009 }, null);
                 }
             );
         }
         // no such request
         else {
-            return callback({ code: '2009' }, null);
+            return callback({ code: 2009 }, null);
         }
     });
 }
@@ -377,7 +406,7 @@ cancel_friend_request = function (target_user_id, source_user_id, callback) {
 
     // check if request exists
     User.countDocuments(query, (error, count) => {
-        if (error) return callback({ code: '1001' }, null);
+        if (error) return callback({ code: 1001 }, null);
 
         // friend request exists
         else if (count > 0) {
@@ -391,17 +420,17 @@ cancel_friend_request = function (target_user_id, source_user_id, callback) {
                         }
                     },
                 }, (error, result) => {
-                    if (error) return callback({ code: '1001' }, null);
+                    if (error) return callback({ code: 1001 }, null);
                     else if (result.n > 0) return callback(null, { success: true });
                     else {
-                        return callback({ code: '2009' }, null);
+                        return callback({ code: 2009 }, null);
                     }
                 }
             );
         }
         // no such request
         else {
-            return callback({ code: '2009' }, null);
+            return callback({ code: 2009 }, null);
         }
     });
 }
@@ -425,7 +454,7 @@ get_friend_requests = function (user_id, callback) {
         // array to object cast
         result = result[0];
 
-        if (error) return callback({ code: '1001' }, null);
+        if (error) return callback({ code: 1001 }, null);
         else if (result) {
             // getting friend_requests_ids from result
             let friend_request_ids = result.friend_requests[0]; // this is array
@@ -446,7 +475,7 @@ get_friend_requests = function (user_id, callback) {
                 ];
 
                 User.find(...query, (error, users) => {
-                    if (error) return callback({ code: '1001' }, null);
+                    if (error) return callback({ code: 1001 }, null);
                     else return callback(null, { success: true, friend_requests: users });
                 });
             }
@@ -456,7 +485,7 @@ get_friend_requests = function (user_id, callback) {
             }
         }
         // no user
-        else return callback({ code: '2003' }, null);
+        else return callback({ code: 2003 }, null);
     });
 }
 
@@ -469,7 +498,7 @@ is_friend_request = function (target_user_id, source_user_id, callback) {
 
     // check if username exists
     User.countDocuments(query, (error, count) => {
-        if (error) return callback({ code: '1001' }, null);
+        if (error) return callback({ code: 1001 }, null);
         else return callback(null, { success: count > 0 });
     });
 }
@@ -493,7 +522,7 @@ get_friends = function (user_id, callback) {
         // array to object cast
         result = result[0];
 
-        if (error) return callback({ code: '1001' }, null);
+        if (error) return callback({ code: 1001 }, null);
         else if (result) {
             // getting friend_ids from result
             let friend_ids = result.friends[0]; // this is array
@@ -502,7 +531,7 @@ get_friends = function (user_id, callback) {
             if (friend_ids.length) {
                 query = [{ _id: { '$in': friend_ids } }, { _id: 1, username: 1, avatar: 1 }];
                 User.find(...query, (error, users) => {
-                    if (error) return callback({ code: '1001' }, null);
+                    if (error) return callback({ code: 1001 }, null);
                     else return callback(null, { success: true, friends: users });
                 });
             }
@@ -512,7 +541,7 @@ get_friends = function (user_id, callback) {
             }
         }
         // no user
-        else return callback({ code: '2003' }, null);
+        else return callback({ code: 2003 }, null);
     });
 }
 
@@ -523,7 +552,7 @@ remove_friend = function (target_user_id, source_user_id, callback) {
 
     // check if user exists
     User.countDocuments(query, (error, count) => {
-        if (error) return callback({ code: '1001' }, null);
+        if (error) return callback({ code: 1001 }, null);
 
         // friend exists
         else if (count > 0) {
@@ -537,20 +566,20 @@ remove_friend = function (target_user_id, source_user_id, callback) {
                         }
                     },
                 }, (error, result) => {
-                    if (error) return callback({ code: '1001' }, null);
+                    if (error) return callback({ code: 1001 }, null);
                     else if (result.n > 0) {
-                        if (error) return callback({ code: '1001' }, null);
+                        if (error) return callback({ code: 1001 }, null);
                         else return callback(null, { success: true });
                     }
                     else {
-                        return callback({ code: '2009' }, null);
+                        return callback({ code: 2009 }, null);
                     }
                 }
             );
         }
         // no such request
         else {
-            return callback({ code: '2009' }, null);
+            return callback({ code: 2009 }, null);
         }
     });
 }
@@ -564,7 +593,7 @@ is_friend = function (target_user_id, source_user_id, callback) {
 
     // check if username exists
     User.countDocuments(query, (error, count) => {
-        if (error) return callback({ code: '1001' }, null);
+        if (error) return callback({ code: 1001 }, null);
         else return callback(null, { success: count > 0 });
     });
 }
@@ -575,13 +604,13 @@ register = function (user, callback) {
     // check if email exists
     User.countDocuments({ email: user.email }, (error_email, email_count) => {
         // if error
-        if (error_email) return callback({ code: '1001_1' }, null);
+        if (error_email) return callback({ code: 1001 }, null);
         // if email exists
         if (email_count == 0) {
             // check if username exists
             User.countDocuments({ username: user.username }, (error_username, username_count) => {
                 // if error
-                if (error_username) return callback({ code: '1001_2' }, null);
+                if (error_username) return callback({ code: 1001 }, null);
                 // if username exists
                 if (username_count == 0) {
                     try {
@@ -599,7 +628,7 @@ register = function (user, callback) {
                                 });
                             });
                     } catch (error) {
-                        return callback({ code: '1001_3' }, null);
+                        return callback({ code: 1001 }, null);
                     }
                 } else {
                     // username already exists
@@ -850,5 +879,7 @@ module.exports = {
     login_with_google: login_with_google,
     login_with_facebook: login_with_facebook,
     edit_settings: edit_settings,
-    push_to_inbox: push_to_inbox
+    push_to_inbox: push_to_inbox,
+    get_user_by_username: get_user_by_username,
+    get_conversation: get_conversation
 }
