@@ -20,7 +20,7 @@ module.exports = (io) => {
             //     token_key: message.token_key
             // };
 
-            console.log("Received Message : ", JSON.stringify(message));
+            // console.log("Received Message : ", JSON.stringify(message));
 
             // user chat
             if (message.type == 'USER_MSG') {

@@ -162,7 +162,6 @@ push_to_inbox = function (message, callback) {
     });
 }
 
-// broken method
 get_conversation = function (target_user_id, source_user_id, callback) {
     inbox = [];
 
@@ -179,6 +178,7 @@ get_conversation = function (target_user_id, source_user_id, callback) {
     ], (error, result) => {
         // if error
         if (error) return callback({ code: 1001 }, null);
+        else if (!result.length) return callback(null, { success: true, inbox: [] });
         else if (result[0].inbox) {
             // sort by received_at field
             result[0].inbox.sort(function (a, b) {
@@ -191,6 +191,65 @@ get_conversation = function (target_user_id, source_user_id, callback) {
     });
 }
 
+get_inbox = function (source_user_id, callback) {
+    User.aggregate([
+        {
+            $unwind: "$inbox"
+        },
+        {
+            $addFields: {
+                participants: ["$_id", "$inbox.from.user.id"]
+            }
+        },
+        {
+            $match: { participants: mongoose.Types.ObjectId(source_user_id) }
+        },
+        {
+            $addFields: {
+                participants: {
+                    $filter: {
+                        input: "$participants",
+                        cond: {
+                            $ne: ["$$this", mongoose.Types.ObjectId(source_user_id)]
+                        }
+                    }
+                }
+            }
+        },
+        {
+            $unwind: "$participants"
+        },
+        {
+            $sort: { "inbox.received_at": -1 }
+        },
+        {
+            $group: {
+                _id: "$participants",
+                content: { $first: "$inbox.message" }
+            }
+        }
+    ], (error1, result) => {
+        if (error1) return callback({ code: 1001 }, null);
+        else {
+            // get user ids from inbox
+            let id_array = result.map(item => item._id);
+
+            User.find({ _id: { $in: id_array } }, { avatar: 1, username: 1 }, (error2, users) => {
+                if (error2) return callback({ code: 1001 }, null);
+                else {
+
+                    // set user's username for result
+                    result.forEach(item => {
+                        item.username = users.find(x => x._id.toString() == item._id.toString()).username;
+                    });
+
+                    return callback(null, { success: true, inbox: result });
+                }
+            });
+        }
+
+    });
+}
 
 // friend methods
 
@@ -888,5 +947,6 @@ module.exports = {
     edit_settings: edit_settings,
     push_to_inbox: push_to_inbox,
     get_user_by_username: get_user_by_username,
-    get_conversation: get_conversation
+    get_conversation: get_conversation,
+    get_inbox: get_inbox
 }

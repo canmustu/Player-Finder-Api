@@ -89,6 +89,20 @@ router.post('/get_conversation', passport.authenticate('jwt', { session: false }
     });
 });
 
+// get conversation - between 2 users
+router.post('/get_inbox', passport.authenticate('jwt', { session: false }), (req, res) => {
+    // check permission for this path
+    AuthenticationService.access_control(req, res, { router_path: router.path }, () => {
+        // source user id from token key
+        let source_user_id = req.user.id;
+
+        UserRepository.get_inbox(source_user_id, (error, result) => {
+            if (error) return res.json({ success: false, error: error });
+            else return res.json(result);
+        });
+    });
+});
+
 // add friend
 router.post('/add_friend', passport.authenticate('jwt', { session: false }), (req, res) => {
     // check permission for this path
