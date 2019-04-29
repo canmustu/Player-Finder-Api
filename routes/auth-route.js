@@ -15,11 +15,11 @@ router.path = '/auth';
 function redirect_to_website(req, res) {
 
     if (req.user) {
-        let token_key = TokenKeyService.create_token_key({ user: req.user });
-        let return_url = req.session.return_url ? req.session.return_url : '';
         let success_type = req.user.success_type;
-
         req.user.success_type = undefined;
+
+        let return_url = req.session.return_url ? req.session.return_url : '';
+        let token_key = TokenKeyService.create_token_key({ user: req.user });
 
         delete req.session.return_url;
 

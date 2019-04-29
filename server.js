@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const app = express();
 const mongoose = require('mongoose');
 const http = require('http').Server(app);
@@ -13,9 +14,8 @@ const session = require('express-session');
 // middlewares
 const logger_middleware = require('./middlewares/logger-middleware');
 
-// models
-// require('./models/user-model');
-// require('./models/permission-model');
+// allow path for "public" folder
+app.use('/public', express.static(path.join(__dirname, 'public')))
 
 // passport setup
 require('./services/passport-setup');
@@ -48,13 +48,15 @@ app.use(cors());
 app.use(body_parser.json());
 
 // routes
-const auth_route = require('./routes/auth-route')
-const permission_route = require('./routes/permission-route')
-const user_route = require('./routes/user-route')
+const auth_route = require('./routes/auth-route');
+const user_route = require('./routes/user-route');
+const game_route = require('./routes/game-route');
+const lobby_route = require('./routes/lobby-route');
 
 app.use(auth_route.path, auth_route);
-app.use(permission_route.path, permission_route);
 app.use(user_route.path, user_route);
+app.use(game_route.path, game_route);
+app.use(lobby_route.path, lobby_route);
 
 // start project
 const port = process.env.PORT || 80;

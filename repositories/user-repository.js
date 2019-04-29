@@ -15,7 +15,8 @@ set_user_for_token_key = function (user) {
         fullname: user.fullname,
         email: user.email,
         username: user.username,
-        role: user.role
+        role: user.role,
+        avatar: user.avatar
     };
 }
 
@@ -797,9 +798,6 @@ login_with_google = function (user, callback) {
                     return callback({ code: 2002 }, null);
                 }
             });
-
-
-
         }
     });
 }

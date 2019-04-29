@@ -54,6 +54,10 @@ const UserSchema = mongoose.Schema({
         required: true,
         default: user_role_type_enum.NORMAL_USER
     },
+    lobby_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: false
+    },
     inbox: [
         {
             _id: false,
