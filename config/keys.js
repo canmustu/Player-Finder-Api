@@ -1,6 +1,7 @@
 module.exports = {
     mongodb: {
-        URI: 'mongodb://localhost:27017/player_finder_db'
+        // URI: 'mongodb://localhost:27017/player_finder_db'
+        URI: 'mongodb://canmustu:3569466can@ds149596.mlab.com:49596/player_finder_db'
     },
     encryption: {
         salt_for_password: '0cd1e9E3d1bD079a'
@@ -21,4 +22,5 @@ module.exports = {
     },
     website_url: 'http://localhost:4200/',
     api_url: 'http://localhost'
+    // api_url: 'https://player-finder-api.herokuapp.com'
 }
