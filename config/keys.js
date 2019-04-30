@@ -21,6 +21,6 @@ module.exports = {
         apiKey: '8E91974DBD8A1F0DCE262C827D56BCD6',
     },
     website_url: 'http://localhost:4200/',
-    api_url: 'http://localhost'
-    // api_url: 'https://player-finder-api.herokuapp.com'
+    // api_url: 'http://localhost'
+    api_url: 'https://player-finder-api.herokuapp.com'
 }
