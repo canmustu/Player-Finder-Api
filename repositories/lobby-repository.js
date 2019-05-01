@@ -6,6 +6,7 @@ const keys = require('../config/keys');
 const jwt = require('jsonwebtoken');
 
 const Lobby = require('../models/lobby-model');
+const User = require('../models/user-model');
 
 get_lobbies = function (game_id, callback) {
     // check if username exists
@@ -18,7 +19,7 @@ get_lobbies = function (game_id, callback) {
         }
         // if lobby not exist
         else {
-            return callback({ code: 3001 }, null);
+            return callback({ code: 5001 }, null);
         }
     });
 }
@@ -27,15 +28,40 @@ create_lobby = function (lobby, callback) {
     lobby
         .save()
         .then((new_lobby) => {
+
+            console.log(new_lobby);
+
             // insertion successful
-            return callback(null, { success: true, lobby: new_lobby });
+            User.updateOne(
+                { _id: new_lobby.owner.id },
+                { lobby_id: new_lobby._id },
+                (error, result) => {
+                    return callback(null, { success: true, lobby: new_lobby });
+                });
         })
         .catch(() => {
-            return callback({ code: 5002 });
+            return callback({ code: 5002 }, null);
         });
+}
+
+get_lobby = function (lobby_id, callback) {
+    // check if username exists
+    Lobby.findById(lobby_id, (error, lobby) => {
+        // if error
+        if (error) return callback({ code: 1001 }, null);
+        // if lobby exist
+        else if (lobby) {
+            return callback(null, { success: true, lobby: lobby });
+        }
+        // if lobby not exist
+        else {
+            return callback({ code: 5001 }, null);
+        }
+    });
 }
 
 module.exports = {
     get_lobbies: get_lobbies,
-    create_lobby: create_lobby
+    create_lobby: create_lobby,
+    get_lobby: get_lobby
 }

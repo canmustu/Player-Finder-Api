@@ -7,6 +7,7 @@ const Lobby = require('../models/lobby-model');
 
 const LobbyRepository = require('../repositories/lobby-repository');
 const GameRepository = require('../repositories/game-repository');
+const UserRepository = require('../repositories/user-repository');
 
 router.path = '/lobby'
 
@@ -19,6 +20,21 @@ router.post('/get_lobbies', passport.authenticate('jwt', { session: false }), (r
         let game_id = req.body.game_id;
 
         LobbyRepository.get_lobbies(game_id, (error, result) => {
+            if (error) return res.json({ success: false, error: error });
+            else return res.json(result);
+        });
+    });
+});
+
+// get lobby by lobby id
+router.post('/get_lobby', passport.authenticate('jwt', { session: false }), (req, res) => {
+    // check permission for this path
+    AuthenticationService.access_control(req, res, { router_path: router.path }, () => {
+
+        // game id from body
+        let lobby_id = req.body.lobby_id;
+
+        LobbyRepository.get_lobby(lobby_id, (error, result) => {
             if (error) return res.json({ success: false, error: error });
             else return res.json(result);
         });
@@ -39,59 +55,65 @@ router.post('/create_lobby', passport.authenticate('jwt', { session: false }), (
         // rank name from body
         let rank_name = req.body.rank_name;
 
-        // user info from token key
-        let owner = {
-            id: req.user.id,
-            username: req.user.username,
-            avatar: req.user.avatar
-        };
+        // if user is not in lobby
+        UserRepository.is_lobby_exist_on_user(req.user.id, (error_user, result) => {
+            console.log(result);
 
-        // get game
-        GameRepository.get_game(game_id, (error_game, result_game) => {
+            if (error_user) return res.json({ success: false, error: error_user });
 
-            if (error_game) return res.json({ success: false, error: error_game });
-            // game exists
-            else if (result_game.success) {
-
-                let game = {
-                    id: result_game.game._id,
-                    name: result_game.game.name,
-                    short_name: result_game.game.short_name,
-                    avatar: result_game.game.avatar,
-                    ranks: [...result_game.game.ranks]
+            else if (result.success) {
+                return res.json({ success: false, error: { code: 2012 } });
+            }
+            else {
+                // user info from token key
+                let owner = {
+                    id: req.user.id,
+                    username: req.user.username,
+                    avatar: req.user.avatar
                 };
 
-                if (rank_name) {
+                // get game
+                GameRepository.get_game(game_id, (error_game, result_game) => {
 
-                    // get rank from game variable
-                    let rank = game.ranks.find(o => o.name == rank_name);
+                    if (error_game) return res.json({ success: false, error: error_game });
+                    // game exists
+                    else if (result_game.success) {
 
-                    game['rank.name'] = rank.name;
-                    game['rank.avatar'] = rank.avatar;
-                }
+                        let game = {
+                            id: result_game.game._id,
+                            name: result_game.game.name,
+                            short_name: result_game.game.short_name,
+                            avatar: result_game.game.avatar,
+                            ranks: [...result_game.game.ranks]
+                        };
 
-                // delete ranks from game
-                delete game.ranks;
+                        if (rank_name) {
 
-                let lobby = new Lobby({
-                    owner,
-                    member_limit,
-                    game
-                });
+                            // get rank from game variable
+                            let rank = game.ranks.find(o => o.name == rank_name);
 
-                // create lobby
-                LobbyRepository.create_lobby(lobby, (error_lobby, result_lobby) => {
+                            game['rank.name'] = rank.name;
+                            game['rank.avatar'] = rank.avatar;
+                        }
 
-                    if (error_lobby) return res.json({ success: false, error: error_lobby });
-                    else if (result_lobby.success) {
+                        // delete ranks from game
+                        delete game.ranks;
 
-                        // TODO: set lobby_id of user
+                        let lobby = new Lobby({
+                            owner,
+                            member_limit,
+                            game
+                        });
 
-                        return res.json(result_lobby);
+                        // create lobby
+                        LobbyRepository.create_lobby(lobby, (error_lobby, result_lobby) => {
+                            if (error_lobby) return res.json({ success: false, error: error_lobby });
+                            else return res.json(result_lobby);
+                        });
                     }
                 });
             }
-        })
+        });
     });
 });
 

@@ -99,32 +99,22 @@ edit_settings = async function (params) {
     return result;
 }
 
-// is_email_exists = function (email) {
-//     if (email) {
-//         User.countDocuments({ email: email }, (error, count) => {
-//             if (error) return callback({ code: 1001 }, null);
-//             // email exists
-//             else if (count)
-//                 return callback({ code: 2002 }, null);
-//             else return callback(null, { success: true, });
-//         });
-//     }
-//     else return callback({ code: 2006 }, null);
-// }
+// lobby methods
 
-// is_username_exists = function (username) {
-//     if (username) {
-//         User.countDocuments({ username: username }, (error, count) => {
-//             if (error) return callback({ code: 1001 }, null);
-//             // email exists
-//             else {
-//                 if (count) return callback(null, { success: true });
-//                 else return callback(null, { success: false });
-//             }
-//         });
-//     }
-//     else return callback({ code: 2006 }, null);
-// }
+add_lobby_to_owner = function (lobby_id, user_id, callback) {
+
+}
+
+is_lobby_exist_on_user = function (user_id, callback) {
+    User.findById(user_id, (error, user) => {
+        // if error
+        if (error) return callback({ code: 1001 }, null);
+        // if user exists
+        else if (user) return callback(null, { success: user.lobby_id });
+        // if user not exist
+        else return callback({ code: 2003 }, null);
+    });
+}
 
 // messages methods
 
@@ -953,5 +943,6 @@ module.exports = {
     push_to_inbox: push_to_inbox,
     get_user_by_username: get_user_by_username,
     get_conversation: get_conversation,
-    get_inbox: get_inbox
+    get_inbox: get_inbox,
+    is_lobby_exist_on_user: is_lobby_exist_on_user
 }
