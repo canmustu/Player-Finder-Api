@@ -9,7 +9,7 @@ const Lobby = require('../models/lobby-model');
 
 get_lobbies = function (game_id, callback) {
     // check if username exists
-    Lobby.find({"game.id": game_id}, (error, lobbies) => {
+    Lobby.find({ "game.id": game_id }, (error, lobbies) => {
         // if error
         if (error) return callback({ code: 1001 }, null);
         // if lobbies exist
@@ -23,6 +23,19 @@ get_lobbies = function (game_id, callback) {
     });
 }
 
+create_lobby = function (lobby, callback) {
+    lobby
+        .save()
+        .then((new_lobby) => {
+            // insertion successful
+            return callback(null, { success: true, lobby: new_lobby });
+        })
+        .catch(() => {
+            return callback({ code: 5002 });
+        });
+}
+
 module.exports = {
-    get_lobbies: get_lobbies
+    get_lobbies: get_lobbies,
+    create_lobby: create_lobby
 }
