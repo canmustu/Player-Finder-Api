@@ -10,7 +10,7 @@ const User = require('../models/user-model');
 
 get_lobbies = function (game_id, callback) {
     // check if username exists
-    Lobby.find({ "game.id": game_id }, (error, lobbies) => {
+    Lobby.find({ "game.id": game_id, type: 1 }, (error, lobbies) => {
         // if error
         if (error) return callback({ code: 1001 }, null);
         // if lobbies exist
@@ -28,8 +28,6 @@ create_lobby = function (lobby, callback) {
     lobby
         .save()
         .then((new_lobby) => {
-
-            console.log(new_lobby);
 
             // insertion successful
             User.updateOne(

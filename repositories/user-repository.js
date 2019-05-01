@@ -110,7 +110,7 @@ is_lobby_exist_on_user = function (user_id, callback) {
         // if error
         if (error) return callback({ code: 1001 }, null);
         // if user exists
-        else if (user) return callback(null, { success: user.lobby_id });
+        else if (user) return callback(null, { success: user.lobby_id ? true : false });
         // if user not exist
         else return callback({ code: 2003 }, null);
     });

@@ -2,6 +2,11 @@ const mongoose = require('mongoose');
 
 // user schema
 const LobbySchema = mongoose.Schema({
+    type: {
+        type: Number,
+        required: true,
+        default: 1
+    },
     owner: {
         id: {
             type: mongoose.Types.ObjectId,
