@@ -29,7 +29,7 @@ const UserSchema = mongoose.Schema({
     },
     avatar: {
         type: String,
-        required: false,
+        required: false
     },
     karma_point: {
         type: Number,
@@ -38,7 +38,7 @@ const UserSchema = mongoose.Schema({
     },
     last_seen: {
         type: Date,
-        required: false,
+        required: false
     },
     profile_visibility: {
         type: Boolean,
@@ -58,6 +58,16 @@ const UserSchema = mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         required: false
     },
+    contact: {
+        facebook_url: {
+            type: String,
+            required: false
+        },
+        discord_url: {
+            type: String,
+            required: false
+        }
+    },
     inbox: [
         {
             _id: false,
@@ -65,7 +75,7 @@ const UserSchema = mongoose.Schema({
                 user: {
                     id: {
                         type: mongoose.Schema.Types.ObjectId,
-                        required: true,
+                        required: true
                     }
                 }
             },
@@ -85,7 +95,7 @@ const UserSchema = mongoose.Schema({
             user: {
                 id: {
                     type: mongoose.Schema.Types.ObjectId,
-                    required: true,
+                    required: true
                 }
             }
         }
@@ -96,11 +106,11 @@ const UserSchema = mongoose.Schema({
             user: {
                 id: {
                     type: mongoose.Schema.Types.ObjectId,
-                    required: true,
+                    required: true
                 },
                 requested_at: {
                     type: Date,
-                    required: true,
+                    required: true
                 }
             }
         }

@@ -336,7 +336,10 @@ router.post('/edit_settings', passport.authenticate('jwt', { session: false }), 
             birth_date: req.body.birth_date,
             gender: req.body.gender,
             fullname: req.body.fullname,
-            password: req.body.password
+            password: req.body.password,
+
+            facebook_url: req.body.facebook_url,
+            discord_url: req.body.discord_url
         };
 
         if (Object.keys(params).length > 1) {

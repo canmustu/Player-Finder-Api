@@ -69,9 +69,14 @@ edit_settings = async function (params) {
         });
         if (result) return result;
     }
-
     if (params.gender) {
         query.$set.gender = params.gender;
+    }
+    if (params.facebook_url) {
+        query.$set["contact.facebook_url"] = params.facebook_url;
+    }
+    if (params.discord_url) {
+        query.$set["contact.discord_url"] = params.discord_url;
     }
     if (params.fullname) {
         query.$set.fullname = params.fullname;
@@ -262,7 +267,9 @@ get_profile = function (user_id, callback) {
         "gender": 1,
         "email": 1,
         "avatar": 1,
+        "contact": 1,
         "birth_date": 1,
+        "lobby_id": 1,
         "last_seen": 1,
         "karma_point": 1,
         "profile_visibility": 1
