@@ -112,10 +112,20 @@ is_lobby_exist_on_user = function (user_id, callback) {
     });
 }
 
-exit_from_lobby = function (user_id, callback) {
+exit_lobby = function (user_id, callback) {
     User.updateOne(
         { _id: user_id },
         { $unset: { lobby_id: 1 } },
+        (error, result) => {
+            if (error) return callback({ code: 1001 }, null);
+            else return callback(null, { success: result.nModified > 0 });
+        });
+}
+
+join_lobby = function (user_id, lobby_id, callback) {
+    User.updateOne(
+        { _id: user_id, type: 1 },
+        { $set: { lobby_id: lobby_id } },
         (error, result) => {
             if (error) return callback({ code: 1001 }, null);
             else return callback(null, { success: result.nModified > 0 });
@@ -951,5 +961,6 @@ module.exports = {
     get_conversation: get_conversation,
     get_inbox: get_inbox,
     is_lobby_exist_on_user: is_lobby_exist_on_user,
-    exit_from_lobby: exit_from_lobby
+    exit_lobby: exit_lobby,
+    join_lobby: join_lobby
 }

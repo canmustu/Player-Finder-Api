@@ -23,6 +23,7 @@ const LobbySchema = mongoose.Schema({
     },
     members: [
         {
+            _id: false,
             user: {
                 id: {
                     type: mongoose.Types.ObjectId,
