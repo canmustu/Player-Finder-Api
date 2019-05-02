@@ -123,4 +123,36 @@ router.post('/create_lobby', passport.authenticate('jwt', { session: false }), (
     });
 });
 
+// exit lobby
+router.post('/exit_lobby', passport.authenticate('jwt', { session: false }), (req, res) => {
+    // check permission for this path
+    AuthenticationService.access_control(req, res, { router_path: router.path }, () => {
+
+        UserRepository.get_profile(req.user.id, (error_user, result_user) => {
+            if (error_user) return res.json({ success: false, error: error_user });
+            // if lobby_id exist on user
+            else if (result_user.user.lobby_id) {
+
+                // if user is owner of lobby, turn lobby off
+                LobbyRepository.make_deactive_lobby(result_user.user.lobby_id, req.user.id,
+                    (error_lobby_deactive, result_lobby_deactive) => {
+                        if (error_lobby_deactive) return res.json({ success: false, error: error_lobby_deactive });
+                        else {
+
+                            // exit from lobby on user
+                            UserRepository.exit_from_lobby(req.user.id, (error_user_lobby, result_user_lobby) => {
+                                if (error_user_lobby) return res.json({ success: false, error: error_user_lobby });
+                                else return res.json({ success: result_user_lobby.success });
+                            });
+                        }
+                    });
+            }
+            // if lobby_id not exist on user
+            else {
+                return res.json({ success: false, error: { code: 2013 } });
+            }
+        });
+    });
+});
+
 module.exports = router;

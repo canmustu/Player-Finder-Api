@@ -101,10 +101,6 @@ edit_settings = async function (params) {
 
 // lobby methods
 
-add_lobby_to_owner = function (lobby_id, user_id, callback) {
-
-}
-
 is_lobby_exist_on_user = function (user_id, callback) {
     User.findById(user_id, (error, user) => {
         // if error
@@ -114,6 +110,16 @@ is_lobby_exist_on_user = function (user_id, callback) {
         // if user not exist
         else return callback({ code: 2003 }, null);
     });
+}
+
+exit_from_lobby = function (user_id, callback) {
+    User.updateOne(
+        { _id: user_id },
+        { $unset: { lobby_id: 1 } },
+        (error, result) => {
+            if (error) return callback({ code: 1001 }, null);
+            else return callback(null, { success: result.nModified > 0 });
+        });
 }
 
 // messages methods
@@ -944,5 +950,6 @@ module.exports = {
     get_user_by_username: get_user_by_username,
     get_conversation: get_conversation,
     get_inbox: get_inbox,
-    is_lobby_exist_on_user: is_lobby_exist_on_user
+    is_lobby_exist_on_user: is_lobby_exist_on_user,
+    exit_from_lobby: exit_from_lobby
 }

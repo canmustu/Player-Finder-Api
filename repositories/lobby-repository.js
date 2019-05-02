@@ -58,8 +58,22 @@ get_lobby = function (lobby_id, callback) {
     });
 }
 
+make_deactive_lobby = function (lobby_id, user_id, callback) {
+    console.log(lobby_id, user_id);
+    // check if username exists
+    Lobby.updateOne(
+        { _id: lobby_id, 'owner.id': user_id },
+        { $set: { type: 0 } },
+        (error, result) => {
+            // if error
+            if (error) return callback({ code: 1001 }, null);
+            else return callback(null, { success: result.nModified > 0 });
+        });
+}
+
 module.exports = {
     get_lobbies: get_lobbies,
     create_lobby: create_lobby,
-    get_lobby: get_lobby
+    get_lobby: get_lobby,
+    make_deactive_lobby: make_deactive_lobby
 }
