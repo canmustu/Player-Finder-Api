@@ -157,7 +157,7 @@ router.post('/join_lobby', passport.authenticate('jwt', { session: false }), (re
                         // if user is not lobby owner
                         else {
                             LobbyRepository.push_member_to_lobby(lobby_id, user, (error_push_member, result_push_member) => {
-                                if (error_join_lobby) return res.json({ success: false, error: error_join_lobby });
+                                if (error_push_member) return res.json({ success: false, error: error_push_member });
                                 else {
                                     UserRepository.join_lobby(req.user.id, lobby_id, (error, result) => {
                                         if (error) return res.json({ success: false, error: error });
@@ -190,7 +190,6 @@ router.post('/exit_lobby', passport.authenticate('jwt', { session: false }), (re
                     (error_lobby_deactive, result_lobby_deactive) => {
                         if (error_lobby_deactive) return res.json({ success: false, error: error_lobby_deactive });
                         else {
-
                             // exit from lobby on user
                             UserRepository.exit_lobby(req.user.id, (error_user_lobby, result_user_lobby) => {
                                 if (error_user_lobby) return res.json({ success: false, error: error_user_lobby });

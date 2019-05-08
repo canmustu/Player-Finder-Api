@@ -61,6 +61,10 @@ exit_from_lobby = function (lobby_id, user_id, callback) {
         if (error_lobby) return callback({ code: 1001 }, null);
         else {
             if (result_lobby.owner.id == user_id) {
+                console.log("owner");
+                console.log("lobby_id : ", lobby_id);
+                console.log("result_lobby.owner.id : ", result_lobby.owner.id);
+                console.log("user_id : ", user_id);
                 Lobby.updateOne(
                     { _id: lobby_id, 'owner.id': user_id },
                     { $set: { type: 0 } },
@@ -71,18 +75,21 @@ exit_from_lobby = function (lobby_id, user_id, callback) {
             }
             else {
                 // pull
+                console.log("member");
+                console.log("lobby_id : ", lobby_id);
+                console.log("result_lobby.owner.id : ", result_lobby.owner.id);
+                console.log("user_id : ", user_id);
                 Lobby.updateOne(
                     { _id: lobby_id },
                     {
                         $pull: {
                             members: {
-                                user: {
-                                    id: user_id
-                                }
+                                'user.id': user_id
                             }
                         }
                     },
                     (error, result) => {
+                        console.log("result : ", result);
                         if (error) return callback({ code: 1001 }, null);
                         else return callback(null, { success: result.nModified ? true : false });
                     });
