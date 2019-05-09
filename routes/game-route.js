@@ -10,12 +10,9 @@ router.path = '/game'
 
 // get all games
 router.post('/get_games', passport.authenticate('jwt', { session: false }), (req, res) => {
-    // check permission for this path
-    AuthenticationService.access_control(req, res, { router_path: router.path }, () => {
-        GameRepository.get_games((error, result) => {
-            if (error) return res.json({ success: false, error: error });
-            else return res.json(result);
-        });
+    GameRepository.get_games((error, result) => {
+        if (error) return res.json({ success: false, error: error });
+        else return res.json(result);
     });
 });
 
