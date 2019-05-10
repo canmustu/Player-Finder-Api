@@ -21,7 +21,7 @@ get_games = function (callback) {
 
 get_game = function (game_id, callback) {
     // check if username exists
-    Game.findOne({ _id: game_id }, (error, game) => {
+    Game.findById(game_id, (error, game) => {
         // if error
         if (error) return callback({ code: 1001 }, null);
         // if game exist

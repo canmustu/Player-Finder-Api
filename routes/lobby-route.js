@@ -55,7 +55,7 @@ router.post('/create_lobby', passport.authenticate('jwt', { session: false }), (
         // rank name from body
         let rank_name = req.body.rank_name;
 
-        if (game_id && member_limit && rank_name) {
+        if (game_id && member_limit) {
 
             // if user is not in lobby
             UserRepository.is_lobby_exist_on_user(req.user.id, (error_user, result) => {
